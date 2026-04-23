@@ -38,6 +38,28 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
+//endpoint untuk menambahkan data transaksi (post)
+app.post("/api/transactions", async (req, res) => {
+  try {
+    const { amount, description, category_id } = req.body;
+
+    // Validasi sederhana
+    if (!amount || !description || !category_id) {
+      return res.status(400).json({ message: "Data tidak lengkap" });
+    }
+
+    const newTransaction = await pool.query(
+      "INSERT INTO transactions (amount, description, category_id) VALUES ($1, $2, $3) RETURNING *",
+      [amount, description, category_id],
+    );
+
+    res.json(newTransaction.rows[0]);
+  } catch (err) {
+    console.error("Error Input:", err.message);
+    res.status(500).send("Gagal menyimpan transaksi ke database");
+  }
+});
+
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Server jalan di http://localhost:${PORT}`);

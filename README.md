@@ -92,7 +92,16 @@ DB_PASSWORD=your_password
 DB_PORT=5432
 ```
 
-### 3. Setup Backend
+### 3. Accessing PostgreSQL via Terminal
+To access and manage the database directly from your terminal, execute:
+
+```bash
+psql -U your_username -d fintrack_db
+```
+> [!NOTE]
+> Replace `your_username` and `fintrack_db` with the values you set in your `.env` file. If you are using Docker, you might need to use `docker exec -it <container_id> psql -U your_username -d fintrack_db`.
+
+### 4. Setup Backend
 ```bash
 cd backend-fintrack
 npm install
@@ -100,7 +109,7 @@ node index.js
 ```
 The server will start at `http://localhost:5000`.
 
-### 4. Setup Frontend
+### 5. Setup Frontend
 ```bash
 cd frontend-fintrack
 npm install
