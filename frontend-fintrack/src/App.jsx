@@ -52,26 +52,36 @@ function App() {
     e.preventDefault();
     if (!description || !amount) return alert("Isi semua data dulu ya!");
 
-    setIsLoading(true); //Mulai loading (tombol jadi mati)
+    setIsLoading(true);
+
+    //Cari data kategori yang dipilih untuk tahu tipenya (income/expense)
+    const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
+    const categoryType = selectedCategory ? selectedCategory.type : 'income';
+
+    //Tentukan nominal: Jika expense, paksa jadi angka negatif
+    let finalAmount = Math.abs(parseInt(amount)); //Ambil angka positifnya dulu
+    if (categoryType === 'expense') {
+      finalAmount = -finalAmount; //Ubah jadi negatif
+    }
 
     axios.post('http://localhost:5000/api/transactions', {
       description,
-      amount: parseInt(amount), //Nanti bisa dikali -1 jika tipe-nya 'expense'
+      amount: finalAmount, //Kirim angka yang sudah disesuaikan
       category_id: categoryId
     }).then(() => {
       fetchTransactions(); 
       setDescription('');   
       setAmount('');
-      setIsModalOpen(false); // 2. Tutup modal (tanda sukses)
-      alert("Data berhasil disimpan!"); // 3. Beri feedback
+      setIsModalOpen(false);
+      alert("Data berhasil disimpan!");
     }).catch(err => {
       alert("Gagal simpan data: " + err.message);
     }).finally(() => {
-      setIsLoading(false); // 4. Matikan loading apapun hasilnya
+      setIsLoading(false);
     });
   };
 
-  // Menghitung total saldo secara dinamis
+  //Hitung total saldo secara dinamis
   const totalBalance = transactions.reduce((acc, curr) => {
     const amount = Number(curr.amount) || 0;
     if (curr.type === 'income') {
@@ -82,10 +92,10 @@ function App() {
     return acc;
   }, 0);
 
-  // Menghitung persentase sederhana (opsional, untuk tampilan)
+  //Hitung persentase sederhana (opsional, untuk tampilan)
   const percentageIncrease = 12.5;
 
-  // Mengambil 9 transaksi terakhir untuk grafik
+  //Ambil 9 transaksi terakhir untuk grafik
   const chartData = transactions.length > 0 ? transactions.slice(-9).map(t => {
     const amounts = transactions.map(tr => Number(tr.amount));
     const maxAmount = Math.max(...amounts, 1);
