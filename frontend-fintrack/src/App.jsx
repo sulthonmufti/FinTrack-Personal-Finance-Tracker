@@ -20,6 +20,23 @@ const NavItem = ({ icon: Icon, label, active = false }) => (
   </div>
 )
 
+// Fungsi untuk format angka menjadi Rupiah
+const formatRupiah = (value) => {
+  if (!value) return '';
+  const numberString = value.toString().replace(/[^,\d]/g, '');
+  const split = numberString.split(',');
+  const sisa = split[0].length % 3;
+  let rupiah = split[0].substr(0, sisa);
+  const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+  if (ribuan) {
+    const separator = sisa ? '.' : '';
+    rupiah += separator + ribuan.join('.');
+  }
+
+  return split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+};
+
 function App() {
   const [transactions, setTransactions] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false) // State untuk buka/tutup modal
@@ -59,7 +76,8 @@ function App() {
     const categoryType = selectedCategory ? selectedCategory.type : 'income';
 
     //Tentukan nominal: Jika expense, paksa jadi angka negatif
-    let finalAmount = Math.abs(parseInt(amount)); //Ambil angka positifnya dulu
+    //let finalAmount = Math.abs(parseInt(amount)); //Ambil angka positifnya dulu
+    let finalAmount = Math.abs(Number(amount)); // Menggunakan Number agar lebih fleksibel
     if (categoryType === 'expense') {
       finalAmount = -finalAmount; //Ubah jadi negatif
     }
@@ -141,10 +159,16 @@ function App() {
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-2">Amount (Rp)</label>
                 <input 
-                  type="number" 
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                  type="text"  // Ubah dari "number" ke "text"
+                  value={formatRupiah(amount)} // Tampilan otomatis berformat titik
+                  onChange={(e) => {
+                    // Hanya simpan angka murni ke dalam state
+                    const rawValue = e.target.value.replace(/\./g, '');
+                    if (!isNaN(rawValue)) {
+                      setAmount(rawValue);
+                    }
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" 
                   placeholder="0"
                 />
               </div>
