@@ -23,6 +23,7 @@ const NavItem = ({ icon: Icon, label, active = false }) => (
 function App() {
   const [transactions, setTransactions] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false) // State untuk buka/tutup modal
+  const [categories, setCategories] = useState([])
 
   // State untuk form input
   const [description, setDescription] = useState('');
@@ -35,38 +36,61 @@ function App() {
       .catch(err => console.error(err));
   };
 
+  const fetchCategories = () => {
+    axios.get('http://localhost:5000/api/categories')
+      .then(res => setCategories(res.data))
+      .catch(err => console.error("Gagal ambil kategori:", err));
+  };
+
   useEffect(() => {
     fetchTransactions();
+    fetchCategories(); // Panggil fungsi ambil kategori
   }, []);
 
+  const [isLoading, setIsLoading] = useState(false);
   const handleAddTransaction = (e) => {
     e.preventDefault();
     if (!description || !amount) return alert("Isi semua data dulu ya!");
 
+    setIsLoading(true); //Mulai loading (tombol jadi mati)
+
     axios.post('http://localhost:5000/api/transactions', {
       description,
-      amount: parseInt(amount),
+      amount: parseInt(amount), //Nanti bisa dikali -1 jika tipe-nya 'expense'
       category_id: categoryId
     }).then(() => {
-      fetchTransactions();
-      setDescription('');
+      fetchTransactions(); 
+      setDescription('');   
       setAmount('');
-      setIsModalOpen(false); // Tutup modal setelah sukses
-    }).catch(err => alert("Gagal simpan data: " + err.message));
+      setIsModalOpen(false); // 2. Tutup modal (tanda sukses)
+      alert("Data berhasil disimpan!"); // 3. Beri feedback
+    }).catch(err => {
+      alert("Gagal simpan data: " + err.message);
+    }).finally(() => {
+      setIsLoading(false); // 4. Matikan loading apapun hasilnya
+    });
   };
 
   // Menghitung total saldo secara dinamis
-  const totalBalance = transactions.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const totalBalance = transactions.reduce((acc, curr) => {
+    const amount = Number(curr.amount) || 0;
+    if (curr.type === 'income') {
+      return acc + amount;
+    } else if (curr.type === 'expense') {
+      return acc - amount;
+    }
+    return acc;
+  }, 0);
 
   // Menghitung persentase sederhana (opsional, untuk tampilan)
   const percentageIncrease = 12.5;
 
   // Mengambil 9 transaksi terakhir untuk grafik
-  const chartData = transactions.slice(-9).map(t => {
-    // Kita normalisasi tingginya agar maksimal 100%
-    const maxAmount = Math.max(...transactions.map(tr => tr.amount), 1);
-    return (t.amount / maxAmount) * 100;
-  });
+  const chartData = transactions.length > 0 ? transactions.slice(-9).map(t => {
+    const amounts = transactions.map(tr => Number(tr.amount));
+    const maxAmount = Math.max(...amounts, 1);
+    return (Number(t.amount) / maxAmount) * 100;
+  }) : [];
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
@@ -82,6 +106,18 @@ function App() {
               </button>
             </div>
             <form onSubmit={handleAddTransaction} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Category</label>
+                <select 
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  {categories && categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name} ({cat.type})</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-2">Description</label>
                 <input 
@@ -102,8 +138,14 @@ function App() {
                   placeholder="0"
                 />
               </div>
-              <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
-                Save Transaction
+              <button 
+                type="submit" 
+                disabled={isLoading} //Mencegah klik ganda
+                className={`w-full py-4 rounded-2xl font-bold shadow-lg transition-all ${
+                  isLoading ? 'bg-slate-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100'
+                }`}
+              >
+                {isLoading ? 'Saving...' : 'Save Transaction'}
               </button>
             </form>
           </div>

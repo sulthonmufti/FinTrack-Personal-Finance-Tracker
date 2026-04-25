@@ -26,7 +26,13 @@ app.get("/", (req, res) => {
 app.get("/api/transactions", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT t.id, t.amount, t.description, t.transaction_date, c.name AS category
+      SELECT 
+        t.id, 
+        t.amount, 
+        t.description, 
+        t.transaction_date, 
+        c.name AS category,
+        c.type AS type        -- KUNCI PENTING: Ambil tipe dari tabel categories
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       ORDER BY t.transaction_date DESC
@@ -38,21 +44,30 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
+// Endpoint untuk mengambil daftar kategori (untuk dropdown di Modal)
+app.get("/api/categories", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM categories ORDER BY name ASC",
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Gagal mengambil data kategori");
+  }
+});
+
 //endpoint untuk menambahkan data transaksi (post)
 app.post("/api/transactions", async (req, res) => {
   try {
     const { amount, description, category_id } = req.body;
-
-    // Validasi sederhana
     if (!amount || !description || !category_id) {
       return res.status(400).json({ message: "Data tidak lengkap" });
     }
-
     const newTransaction = await pool.query(
       "INSERT INTO transactions (amount, description, category_id) VALUES ($1, $2, $3) RETURNING *",
       [amount, description, category_id],
     );
-
     res.json(newTransaction.rows[0]);
   } catch (err) {
     console.error("Error Input:", err.message);
