@@ -13,6 +13,7 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 ---
 
 ## Key Features
+
 - Transaction Management: Record and view financial transaction history.
 - Categorization: Group transactions by categories (e.g., Food, Transport, Entertainment).
 - Relational Database: Structured data storage using PostgreSQL.
@@ -22,13 +23,13 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 
 ## Tech Stack
 
-| Category | Technology |
-| :--- | :--- |
-| Frontend | React.js (Vite) |
-| Backend | Node.js, Express.js |
-| Database | PostgreSQL |
-| API Testing | Postman / Insomnia |
-| Environment | Dotenv, CORS |
+| Category    | Technology          |
+| :---------- | :------------------ |
+| Frontend    | React.js (Vite)     |
+| Backend     | Node.js, Express.js |
+| Database    | PostgreSQL          |
+| API Testing | Postman / Insomnia  |
+| Environment | Dotenv, CORS        |
 
 ---
 
@@ -78,10 +79,12 @@ INSERT INTO categories (name) VALUES ('Food'), ('Transport'), ('Utilities'), ('E
 ## Installation & Setup
 
 ### 1. Prerequisites
+
 - Node.js (LTS version recommended)
 - PostgreSQL (Local installation or Docker container)
 
 ### 2. Database Configuration
+
 Create a `.env` file in the `backend-fintrack/` directory and provide your database credentials:
 
 ```env
@@ -93,26 +96,48 @@ DB_PORT=5432
 ```
 
 ### 3. Accessing PostgreSQL via Terminal
-To access and manage the database directly from your terminal, execute:
+
+To access and manage the database directly from your terminal (using Docker), execute:
 
 ```bash
-psql -U your_username -d fintrack_db
+docker exec -it postgres-dev psql -U postgres
 ```
-> [!NOTE]
-> Replace `your_username` and `fintrack_db` with the values you set in your `.env` file. If you are using Docker, you might need to use `docker exec -it <container_id> psql -U your_username -d fintrack_db`.
+
+#### Helpful PostgreSQL Commands:
+
+Once you are inside the PostgreSQL terminal (`psql`), you can use these shortcuts:
+
+- **General Commands:**
+  - `\l` : List all databases.
+  - `\c fintrack_db` : Connect to the `fintrack_db` database.
+  - `\q` : Quit/Exit the psql terminal.
+
+- **Viewing Tables:**
+  - `\dt` : List tables in the current database.
+  - `\dt *.*` : List all tables in all schemas.
+  - `\d table_name` : Show structure (columns, types) of a specific table.
+
+- **Common SQL Queries:**
+  - `SELECT * FROM categories;` : View all categories.
+  - `SELECT * FROM transactions;` : View all transactions.
+  - `DELETE FROM transactions WHERE id = 1;` : Delete a specific transaction.
 
 ### 4. Setup Backend
+
 ```bash
 cd backend-fintrack
 npm install
 node index.js
 ```
+
 The server will start at `http://localhost:5000`.
 
 ### 5. Setup Frontend
+
 ```bash
 cd frontend-fintrack
 npm install
 npm run dev
 ```
+
 The application will be accessible at the local address provided in the terminal (usually `http://localhost:5173`).
