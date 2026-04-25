@@ -55,6 +55,19 @@ function App() {
     }).catch(err => alert("Gagal simpan data: " + err.message));
   };
 
+  // Menghitung total saldo secara dinamis
+  const totalBalance = transactions.reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  // Menghitung persentase sederhana (opsional, untuk tampilan)
+  const percentageIncrease = 12.5;
+
+  // Mengambil 9 transaksi terakhir untuk grafik
+  const chartData = transactions.slice(-9).map(t => {
+    // Kita normalisasi tingginya agar maksimal 100%
+    const maxAmount = Math.max(...transactions.map(tr => tr.amount), 1);
+    return (t.amount / maxAmount) * 100;
+  });
+
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
       
@@ -138,16 +151,29 @@ function App() {
         <div className="grid grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
             <p className="text-slate-400 text-xs font-bold tracking-widest mb-2 uppercase">Total Balance</p>
-            <h2 className="text-3xl font-bold">$15,793.68</h2>
-            <p className="text-emerald-500 text-xs mt-3 font-bold bg-emerald-50 inline-block px-2 py-1 rounded-lg">↑ 12.5%</p>
+            {/* Angka Saldo Dinamis */}
+            <h2 className="text-3xl font-bold">
+              Rp {totalBalance.toLocaleString('id-ID')}
+            </h2>
+            <p className="text-emerald-500 text-xs mt-3 font-bold bg-emerald-50 inline-block px-2 py-1 rounded-lg">
+              ↑ {percentageIncrease}%
+            </p>
           </div>
+
           <div className="bg-indigo-600 p-8 rounded-[2rem] shadow-xl shadow-indigo-100 col-span-2 text-white relative overflow-hidden">
-             <p className="opacity-70 text-xs font-bold tracking-widest uppercase">Monthly Activity</p>
-             <div className="h-20 flex items-end gap-3 mt-6">
-                {[40, 70, 45, 90, 65, 80, 30, 50, 40].map((h, i) => (
-                  <div key={i} style={{height: `${h}%`}} className="flex-1 bg-white/20 rounded-full"></div>
-                ))}
-             </div>
+            <p className="opacity-70 text-xs font-bold tracking-widest uppercase">Recent Activity</p>
+            <div className="h-20 flex items-end gap-3 mt-6">
+                {/* Grafik Dinamis berdasarkan data transaksi */}
+                {chartData.length > 0 ? chartData.map((h, i) => (
+                  <div 
+                    key={i} 
+                    style={{ height: `${Math.max(h, 10)}%` }} // Minimal tinggi 10% agar tetap terlihat
+                    className="flex-1 bg-white/20 rounded-full transition-all duration-500"
+                  ></div>
+                )) : (
+                  <p className="text-white/40 text-xs">Belum ada data aktivitas</p>
+                )}
+            </div>
           </div>
         </div>
 
