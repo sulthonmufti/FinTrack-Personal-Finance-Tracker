@@ -12,6 +12,7 @@ import {
   X,
   RefreshCw
 } from 'lucide-react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const NavItem = ({ icon: Icon, label, active = false }) => (
   <div className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}>
@@ -126,6 +127,19 @@ function App() {
     return item.category === filterCategory;
   });
 
+  // Logika untuk menyiapkan data Pie Chart
+  const pieData = categories.map(cat => {
+    // Hitung total nominal untuk tiap kategori
+    const total = transactions
+      .filter(t => t.category === cat.name)
+      .reduce((acc, curr) => acc + Math.abs(Number(curr.amount)), 0);
+
+    return { name: cat.name, value: total };
+  }).filter(data => data.value > 0); // Hanya tampilkan kategori yang ada transaksinya
+
+  // Warna untuk tiap slice di Pie Chart
+  const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
       
@@ -230,31 +244,57 @@ function App() {
         </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="grid grid-cols-4 gap-6 mb-8">
+          
+          {/* Kartu Saldo (tetap 1 kolom) */}
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
             <p className="text-slate-400 text-xs font-bold tracking-widest mb-2 uppercase">Total Balance</p>
-            {/* Angka Saldo Dinamis */}
-            <h2 className="text-3xl font-bold">
+            <h2 className="text-2xl font-bold text-indigo-600">
               Rp {totalBalance.toLocaleString('id-ID')}
             </h2>
-            <p className="text-emerald-500 text-xs mt-3 font-bold bg-emerald-50 inline-block px-2 py-1 rounded-lg">
-              ↑ {percentageIncrease}%
-            </p>
           </div>
 
-          <div className="bg-indigo-600 p-8 rounded-[2rem] shadow-xl shadow-indigo-100 col-span-2 text-white relative overflow-hidden">
-            <p className="opacity-70 text-xs font-bold tracking-widest uppercase">Recent Activity</p>
-            <div className="h-20 flex items-end gap-3 mt-6">
-                {/* Grafik Dinamis berdasarkan data transaksi */}
-                {chartData.length > 0 ? chartData.map((h, i) => (
-                  <div 
-                    key={i} 
-                    style={{ height: `${Math.max(h, 10)}%` }} // Minimal tinggi 10% agar tetap terlihat
-                    className="flex-1 bg-white/20 rounded-full transition-all duration-500"
-                  ></div>
-                )) : (
-                  <p className="text-white/40 text-xs">Belum ada data aktivitas</p>
-                )}
+          {/* KARTU PIE CHART (2 kolom) */}
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm col-span-2 flex items-center">
+            <div className="w-1/2 h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    innerRadius={45}
+                    outerRadius={65}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="w-1/2 space-y-2">
+              <h3 className="text-sm font-bold text-slate-700 mb-3">Expenses by Category</h3>
+              {pieData.slice(0, 4).map((entry, index) => (
+                <div key={entry.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                  <span className="text-xs font-medium text-slate-500 truncate">{entry.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Kartu Recent Activity (1 kolom, sesuaikan lebarnya) */}
+          <div className="bg-indigo-600 p-8 rounded-[2rem] shadow-xl shadow-indigo-100 text-white relative overflow-hidden">
+            <p className="opacity-70 text-[10px] font-bold tracking-widest uppercase">Trend</p>
+            <div className="h-16 flex items-end gap-2 mt-4">
+              {chartData.map((h, i) => (
+                <div key={i} style={{ height: `${h}%` }} className="flex-1 bg-white/20 rounded-full"></div>
+              ))}
             </div>
           </div>
         </div>
