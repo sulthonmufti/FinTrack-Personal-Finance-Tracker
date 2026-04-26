@@ -41,6 +41,7 @@ function App() {
   const [transactions, setTransactions] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false) // State untuk buka/tutup modal
   const [categories, setCategories] = useState([])
+  const [filterCategory, setFilterCategory] = useState('All'); // Default menampilkan semua
 
   // State untuk form input
   const [description, setDescription] = useState('');
@@ -76,7 +77,6 @@ function App() {
     const categoryType = selectedCategory ? selectedCategory.type : 'income';
 
     //Tentukan nominal: Jika expense, paksa jadi angka negatif
-    //let finalAmount = Math.abs(parseInt(amount)); //Ambil angka positifnya dulu
     let finalAmount = Math.abs(Number(amount)); // Menggunakan Number agar lebih fleksibel
     if (categoryType === 'expense') {
       finalAmount = -finalAmount; //Ubah jadi negatif
@@ -119,6 +119,12 @@ function App() {
     const maxAmount = Math.max(...amounts, 1);
     return (Number(t.amount) / maxAmount) * 100;
   }) : [];
+
+  // Filter data berdasarkan kategori yang dipilih
+  const filteredTransactions = transactions.filter(item => {
+    if (filterCategory === 'All') return true;
+    return item.category === filterCategory;
+  });
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
@@ -256,8 +262,18 @@ function App() {
         {/* Table Section */}
         <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
           <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-            <h3 className="text-xl font-bold">Recent Transactions</h3>
-            <button className="text-indigo-600 font-bold text-sm">View All</button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filter:</span>
+              <select 
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-600">
+                <option value="All">All Categories</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <table className="w-full text-left">
             <thead className="bg-slate-50/50 text-slate-400 text-[10px] font-bold uppercase tracking-[0.1em]">
@@ -268,7 +284,8 @@ function App() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {transactions.map(item => (
+              {/* {transactions.map(item => ( */}
+              {filteredTransactions.map(item => (
                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="px-10 py-6 text-sm font-semibold text-slate-700">{item.description}</td>
                   <td className="px-10 py-6 text-center">
@@ -283,6 +300,11 @@ function App() {
               ))}
             </tbody>
           </table>
+          {filteredTransactions.length === 0 && (
+            <div className="p-20 text-center text-slate-400">
+              <p className="text-sm font-medium">No transactions found in this category.</p>
+            </div>
+          )}
         </section>
       </main>
     </div>
