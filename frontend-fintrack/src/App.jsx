@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import Sidebar from './components/Sidebar'
+import TransactionModal from './components/TransactionModal'
 import './index.css'
 // Import icon dari lucide
 import { 
@@ -14,37 +16,12 @@ import {
 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'; //import recharts
 
-const NavItem = ({ icon: Icon, label, active = false }) => (
-  <div className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}>
-    <Icon size={20} />
-    <span className="font-medium text-sm">{label}</span>
-  </div>
-)
-
-// Fungsi untuk format angka menjadi Rupiah
-const formatRupiah = (value) => {
-  if (!value) return '';
-  const numberString = value.toString().replace(/[^,\d]/g, '');
-  const split = numberString.split(',');
-  const sisa = split[0].length % 3;
-  let rupiah = split[0].substr(0, sisa);
-  const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-  if (ribuan) {
-    const separator = sisa ? '.' : '';
-    rupiah += separator + ribuan.join('.');
-  }
-
-  return split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
-};
-
 function App() {
   const [transactions, setTransactions] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false) // State untuk buka/tutup modal
   const [categories, setCategories] = useState([])
   const [filterCategory, setFilterCategory] = useState('All'); // Default menampilkan semua
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); //sidebar responsive
-
   // State untuk form input
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -143,101 +120,11 @@ function App() {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
-      
-      {/* MODAL OVERLAY */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold">Add Transaction</h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleAddTransaction} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-2">Category</label>
-                <select 
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  {categories && categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name} ({cat.type})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-2">Description</label>
-                <input 
-                  type="text" 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-                  placeholder="What's this for?"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-2">Amount (Rp)</label>
-                <input 
-                  type="text"  // Ubah dari "number" ke "text"
-                  value={formatRupiah(amount)} // Tampilan otomatis berformat titik
-                  onChange={(e) => {
-                    // Hanya simpan angka murni ke dalam state
-                    const rawValue = e.target.value.replace(/\./g, '');
-                    if (!isNaN(rawValue)) {
-                      setAmount(rawValue);
-                    }
-                  }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" 
-                  placeholder="0"
-                />
-              </div>
-              <button 
-                type="submit" 
-                disabled={isLoading} //Mencegah klik ganda
-                className={`w-full py-4 rounded-2xl font-bold shadow-lg transition-all ${
-                  isLoading ? 'bg-slate-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100'
-                }`}
-              >
-                {isLoading ? 'Saving...' : 'Save Transaction'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* SIDEBAR OVERLAY (Hanya muncul saat sidebar terbuka di mobile) */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* SIDEBAR */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-[70] w-64 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex items-center justify-between lg:justify-start gap-2 px-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">F</div>
-            <span className="text-xl font-bold tracking-tight">FinTrack</span>
-          </div>
-          {/* Tombol Close untuk Mobile */}
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-slate-400">
-            <X size={20} />
-          </button>
-        </div>
-        <nav className="flex flex-col gap-1">
-          <NavItem icon={LayoutDashboard} label="Dashboard" />
-          <NavItem icon={Wallet} label="Wallets" active={true} />
-          <NavItem icon={ArrowLeftRight} label="Transactions" />
-          <NavItem icon={BarChart3} label="Reports" />
-          <NavItem icon={Settings} label="Settings" />
-        </nav>
-      </aside>
+      {/* sidebar component */}
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
 
       {/* MAIN CONTENT */}
       <main className="flex-1 p-4 md:p-10 overflow-y-auto">
@@ -377,6 +264,20 @@ function App() {
           )}
         </section>
       </main>
+      {/* Modal component (overlay)*/}
+      <TransactionModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        categories={categories}
+        onSubmit={handleAddTransaction}
+        isLoading={isLoading}
+        description={description}
+        setDescription={setDescription}
+        amount={amount}
+        setAmount={setAmount}
+        categoryId={categoryId}
+        setCategoryId={setCategoryId}
+      />
     </div>
   )
 }
