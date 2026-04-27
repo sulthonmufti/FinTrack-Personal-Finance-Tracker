@@ -1,11 +1,18 @@
 import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Settings, X } from 'lucide-react'
+import { NavLink } from 'react-router-dom';
 
 // NavItem
-const NavItem = ({ icon: Icon, label, active = false }) => (
-  <div className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`}>
+const NavItem = ({ icon: Icon, label, to }) => (
+  <NavLink 
+    to={to}
+    className={({ isActive }) => `
+      flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+      ${isActive ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}
+    `}
+  >
     <Icon size={20} />
     <span className="font-medium text-sm">{label}</span>
-  </div>
+  </NavLink>
 )
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -34,11 +41,11 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
         </div>
         <nav className="flex flex-col gap-1">
-          <NavItem icon={LayoutDashboard} label="Dashboard" />
-          <NavItem icon={Wallet} label="Wallets" active={true} />
-          <NavItem icon={ArrowLeftRight} label="Transactions" />
-          <NavItem icon={BarChart3} label="Reports" />
-          <NavItem icon={Settings} label="Settings" />
+          <NavItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" />
+          <NavItem icon={Wallet} label="Wallets" to="/wallets" />
+          <NavItem icon={ArrowLeftRight} label="Transactions" to="/transactions" />
+          <NavItem icon={BarChart3} label="Reports" to="/reports" />
+          <NavItem icon={Settings} label="Settings" to="/settings" />
         </nav>
       </aside>
     </>
