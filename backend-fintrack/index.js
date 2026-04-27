@@ -1,12 +1,16 @@
 const express = require("express");
+require("dotenv").config();
+
 const { Pool } = require("pg");
 const cors = require("cors");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET;
+//console.log("Cek Secret:", JWT_SECRET);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-require("dotenv").config();
 
 // Konfigurasi koneksi ke Database PostgreSQL di Docker
 const pool = new Pool({
@@ -25,22 +29,23 @@ app.get("/", (req, res) => {
 // Endpoint untuk mengambil data transaksi (untuk React nanti)
 app.get("/api/transactions", async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        t.id, 
-        t.amount, 
-        t.description, 
-        t.transaction_date, 
-        c.name AS category,
-        c.type AS type        -- KUNCI PENTING: Ambil tipe dari tabel categories
+    // Untuk sementara, kita hardcode dulu ke user_id 1
+    const userId = 1;
+
+    const result = await pool.query(
+      `
+      SELECT t.*, c.name AS category, c.type 
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
+      WHERE t.user_id = $1
       ORDER BY t.transaction_date DESC
-    `);
+    `,
+      [userId],
+    );
+
     res.json(result.rows);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Ada masalah di server nih");
+    res.status(500).send(err.message);
   }
 });
 
@@ -72,6 +77,68 @@ app.post("/api/transactions", async (req, res) => {
   } catch (err) {
     console.error("Error Input:", err.message);
     res.status(500).send("Gagal menyimpan transaksi ke database");
+  }
+});
+
+// Endpoint Pendaftaran User
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Hash password sebelum disimpan ke DB agar aman
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await pool.query(
+      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email",
+      [username, email, hashedPassword],
+    );
+
+    res.json({ message: "User berhasil dibuat!", user: newUser.rows[0] });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: "Username atau Email sudah terdaftar" });
+  }
+});
+
+// Endpoint Login User
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // 1. Cari user berdasarkan email
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    if (user.rows.length === 0) {
+      return res.status(401).json({ message: "Email tidak terdaftar" });
+    }
+
+    // 2. Bandingkan password yang diinput dengan yang ada di DB (yang sudah di-hash)
+    const validPassword = await bcrypt.compare(password, user.rows[0].password);
+
+    if (!validPassword) {
+      return res.status(401).json({ message: "Password salah!" });
+    }
+
+    // 3. Buat Token JWT sebagai "ID Card" digital
+    const token = jwt.sign(
+      { id: user.rows[0].id, username: user.rows[0].username },
+      JWT_SECRET,
+      { expiresIn: "24h" }, // Token berlaku selama 24 jam
+    );
+
+    res.json({
+      message: "Login Berhasil!",
+      token,
+      user: {
+        id: user.rows[0].id,
+        username: user.rows[0].username,
+      },
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Terjadi kesalahan pada server");
   }
 });
 
