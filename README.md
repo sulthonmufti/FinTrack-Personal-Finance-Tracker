@@ -16,6 +16,8 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 
 - Transaction Management: Record and view financial transaction history.
 - Categorization: Group transactions by categories (e.g., Food, Transport, Entertainment).
+- Interactive Dashboard: Visualize data with dynamic charts using Recharts.
+- Multi-page Navigation: Smooth routing implemented via React Router DOM.
 - Relational Database: Structured data storage using PostgreSQL.
 - RESTful API: Seamless data communication between frontend and backend.
 
@@ -23,13 +25,17 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 
 ## Tech Stack
 
-| Category    | Technology          |
-| :---------- | :------------------ |
-| Frontend    | React.js (Vite)     |
-| Backend     | Node.js, Express.js |
-| Database    | PostgreSQL          |
-| API Testing | Postman / Insomnia  |
-| Environment | Dotenv, CORS        |
+| Category    | Technology                                |
+| :---------- | :---------------------------------------- |
+| Frontend    | React.js (Vite), Tailwind CSS 4.0         |
+| Navigation  | React Router DOM                          |
+| Charts      | Recharts                                  |
+| Icons       | Lucide React                              |
+| Backend     | Node.js, Express.js                       |
+| Database    | PostgreSQL                                |
+| API Client  | Axios                                     |
+| Environment | Dotenv, CORS                              |
+| API Testing | Postman / Insomnia                        |
 
 ---
 
