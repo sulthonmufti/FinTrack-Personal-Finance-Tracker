@@ -4,6 +4,7 @@ import TransactionModal from "../components/TransactionModal";
 import StatsGrid from "../components/StatsGrid";
 import TransactionTable from "../components/TransactionTable";
 import { LayoutDashboard, Plus, RefreshCw } from 'lucide-react'
+import ProfileHeader from '../components/ProfileHeader';
 
 // Terima props setIsSidebarOpen dari App.jsx
 export default function Wallets({ setIsSidebarOpen }) {
@@ -85,9 +86,9 @@ export default function Wallets({ setIsSidebarOpen }) {
 
   return (
     <>
-      <header className="mb-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        {/* AREA KIRI: Menu Mobile + Judul */}
         <div className="flex items-center gap-4">
-          {/* Gunakan props untuk buka sidebar */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="lg:hidden p-3 bg-white border border-slate-200 rounded-2xl text-slate-600 shadow-sm"
@@ -95,22 +96,32 @@ export default function Wallets({ setIsSidebarOpen }) {
             <LayoutDashboard size={20} />
           </button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallets</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">Wallets</h1>
             <p className="text-slate-500 text-xs md:text-sm">Manage your finances</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full lg:w-auto">
-          <button onClick={fetchTransactions} className="p-4 border border-slate-200 rounded-2xl bg-white hover:bg-slate-50">
+        {/* AREA KANAN: Refresh + Add Button + Profile */}
+        <div className="flex items-center gap-3 self-end md:self-center">
+          <button 
+            onClick={fetchTransactions} 
+            className="p-3.5 border border-slate-200 rounded-2xl bg-white hover:bg-slate-50 transition-colors text-slate-600 hidden md:block cursor-pointer"
+          >
             <RefreshCw size={18} />
           </button>
+          
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-4 lg:py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg"
+            className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
           >
             <Plus size={20} />
-            <span>Add Transaction</span>
+            <span className="hidden sm:inline cursor-pointer">Add Transaction</span>
           </button>
+
+          {/* Profile Header dimasukkan di sini agar sejajar dengan Judul & Button */}
+          <div className="pl-2 border-l border-slate-200 ml-2 hidden sm:block">
+            <ProfileHeader />
+          </div>
         </div>
       </header>
 

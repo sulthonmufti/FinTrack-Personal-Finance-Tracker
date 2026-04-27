@@ -1,7 +1,6 @@
-import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Settings, X } from 'lucide-react'
-import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Settings, X, LogOut } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom';
 
-// NavItem
 const NavItem = ({ icon: Icon, label, to }) => (
   <NavLink 
     to={to}
@@ -16,6 +15,17 @@ const NavItem = ({ icon: Icon, label, to }) => (
 )
 
 export default function Sidebar({ isOpen, onClose }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // 1. Hapus semua data di storage
+    localStorage.clear();
+    // 2. Arahkan kembali ke halaman login
+    navigate('/login');
+    // 3. Optional: Paksa reload untuk memastikan state aplikasi bersih
+    window.location.reload();
+  };
+
   return (
     <>
       {/* Sidebar Overlay untuk mobile */}
@@ -28,10 +38,11 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar Content */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-[70] w-64 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-[70] w-64 bg-white border-r border-slate-200 p-6 flex flex-col transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="flex items-center justify-between lg:justify-start gap-2 px-2">
+        {/* Logo Section */}
+        <div className="flex items-center justify-between lg:justify-start gap-2 px-2 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">F</div>
             <span className="text-xl font-bold tracking-tight">FinTrack</span>
@@ -40,6 +51,8 @@ export default function Sidebar({ isOpen, onClose }) {
             <X size={20} />
           </button>
         </div>
+
+        {/* Main Navigation */}
         <nav className="flex flex-col gap-1">
           <NavItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" />
           <NavItem icon={Wallet} label="Wallets" to="/wallets" />
@@ -47,6 +60,17 @@ export default function Sidebar({ isOpen, onClose }) {
           <NavItem icon={BarChart3} label="Reports" to="/reports" />
           <NavItem icon={Settings} label="Settings" to="/settings" />
         </nav>
+
+        {/* --- BAGIAN BARU: Tombol Logout di paling bawah --- */}
+        <div className="mt-auto pt-4 border-t border-slate-100">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all group"
+          >
+            <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
+            <span className="font-medium text-sm">Logout</span>
+          </button>
+        </div>
       </aside>
     </>
   )
