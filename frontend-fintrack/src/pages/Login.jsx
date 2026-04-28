@@ -19,7 +19,7 @@ export default function Login() {
       // Simpan token dan data user ke localStorage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      //console.log(response.data.user);
       setError('');
       navigate('/Dashboard'); // Pindah ke halaman utama
       window.location.reload(); // Refresh untuk update state sidebar

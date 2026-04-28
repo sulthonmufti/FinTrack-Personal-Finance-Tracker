@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Wallets from './pages/Wallets';
 import Login from './pages/Login';
-import ProfileHeader from './components/ProfileHeader';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

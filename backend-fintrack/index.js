@@ -109,7 +109,6 @@ app.post("/api/auth/login", async (req, res) => {
     const user = await pool.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
-    return user;
 
     if (user.rows.length === 0) {
       return res.status(401).json({ message: "Email tidak terdaftar" });

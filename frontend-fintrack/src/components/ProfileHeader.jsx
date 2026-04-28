@@ -1,8 +1,8 @@
 // Komponen Kecil untuk Profile di Pojok Kanan Atas
 export default function ProfileHeader() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
-  console.log("Data User di Storage:", user);
+
+  //console.log("Data User di Storage:", user.email);
   
   return (
     <div className="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-slate-200 shadow-sm transition-all hover:shadow-md cursor-pointer">
