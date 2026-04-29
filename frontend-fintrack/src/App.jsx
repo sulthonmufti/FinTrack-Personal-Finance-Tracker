@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Wallets from './pages/Wallets';
 import Login from './pages/Login';
+import EditProfile from './pages/EditProfile';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -31,6 +32,7 @@ function App() {
             <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
             <Route path="/wallets" element={isAuthenticated ? <Wallets setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
             <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+            <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
           </Routes>
         </div>
       </main>

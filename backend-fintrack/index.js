@@ -143,6 +143,34 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+//Endpoint untuk Update Profile
+app.put("/api/auth/update-profile", async (req, res) => {
+  try {
+    const { id, username, email } = req.body;
+
+    // 1. Jalankan Query Update
+    const updatedUser = await pool.query(
+      "UPDATE users SET username = $1, email = $2 WHERE id = $3 RETURNING id, username, email",
+      [username, email, id],
+    );
+
+    if (updatedUser.rows.length === 0) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    // 2. Kirim data yang sudah diperbarui kembali ke frontend
+    res.json({
+      message: "Profil berhasil diperbarui",
+      user: updatedUser.rows[0],
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      message: "Gagal memperbarui profil. Mungkin email sudah digunakan.",
+    });
+  }
+});
+
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Server jalan di http://localhost:${PORT}`);
