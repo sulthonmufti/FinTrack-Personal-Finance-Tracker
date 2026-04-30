@@ -1,4 +1,4 @@
-import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Settings, X, LogOut } from 'lucide-react'
+import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Settings, X, LogOut, UserRoundPen } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom';
 
 const NavItem = ({ icon: Icon, label, to }) => (
@@ -59,6 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <NavItem icon={ArrowLeftRight} label="Transactions" to="/transactions" />
           <NavItem icon={BarChart3} label="Reports" to="/reports" />
           <NavItem icon={Settings} label="Settings" to="/settings" />
+          <NavItem icon={UserRoundPen} label="Edit Profile" to="/edit-profile" />
         </nav>
 
         {/* --- BAGIAN BARU: Tombol Logout di paling bawah --- */}

@@ -21,13 +21,24 @@ export default function Wallets({ setIsSidebarOpen }) {
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   const fetchTransactions = () => {
-    axios.get('http://localhost:5000/api/transactions')
+    const token = localStorage.getItem('token'); // Ambil token
+
+    axios.get('http://localhost:5000/api/transactions', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
       .then(res => setTransactions(res.data))
       .catch(err => console.error(err));
   };
 
   const fetchCategories = () => {
-    axios.get('http://localhost:5000/api/categories')
+    const token = localStorage.getItem('token');
+    axios.get('http://localhost:5000/api/categories', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
       .then(res => setCategories(res.data))
       .catch(err => console.error("Gagal ambil kategori:", err));
   };
@@ -38,34 +49,45 @@ export default function Wallets({ setIsSidebarOpen }) {
   }, []);
 
   const handleAddTransaction = (e) => {
-    e.preventDefault();
-    if (!description || !amount) return alert("Isi semua data dulu ya!");
-    setIsLoading(true);
+  e.preventDefault();
+  if (!description || !amount) return alert("Isi semua data dulu ya!");
+  setIsLoading(true);
 
-    const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
-    const categoryType = selectedCategory ? selectedCategory.type : 'income';
-    let finalAmount = Math.abs(Number(amount));
-    if (categoryType === 'expense') finalAmount = -finalAmount;
+  // Ambil tipe kategori untuk menentukan +/- saldo
+  const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
+  const categoryType = selectedCategory ? selectedCategory.type : 'income';
+  
+  let finalAmount = Math.abs(Number(amount));
+  if (categoryType === 'expense') finalAmount = -finalAmount;
 
-    axios.post('http://localhost:5000/api/transactions', {
-      description,
-      amount: finalAmount,
-      category_id: categoryId
-    }).then(() => {
-      fetchTransactions(); 
-      setDescription('');   
-      setAmount('');
-      setIsModalOpen(false);
-      alert("Data berhasil disimpan!");
-    }).catch(err => {
-      alert("Gagal simpan data: " + err.message);
-    }).finally(() => setIsLoading(false));
-  };
+  const token = localStorage.getItem('token');
+
+  axios.post('http://localhost:5000/api/transactions', {
+    description,
+    amount: finalAmount,
+    category_id: parseInt(categoryId) // Pastikan dikirim sebagai angka
+  }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(() => {
+    //refresh data setelah berhasil
+    fetchTransactions(); 
+    
+    // reset form
+    setDescription('');   
+    setAmount('');
+    setCategoryId(categories[0]?.id || 1); // Reset ke kategori pertama
+    setIsModalOpen(false);
+  })
+  .catch(err => alert("Gagal: " + err.message))
+  .finally(() => setIsLoading(false));
+};
 
   // LOGIKA PERHITUNGAN
   const totalBalance = transactions.reduce((acc, curr) => {
     const amt = Number(curr.amount) || 0;
-    return curr.type === 'expense' ? acc - Math.abs(amt) : acc + Math.abs(amt);
+    // return curr.type === 'expense' ? acc - Math.abs(amt) : acc + Math.abs(amt);
+    return acc + Number(curr.amount);
   }, 0);
 
   const chartData = transactions.length > 0 ? transactions.slice(-9).map(t => {

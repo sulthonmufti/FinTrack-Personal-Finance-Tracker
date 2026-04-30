@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { User, Mail, Save } from 'lucide-react'; // Menggunakan icon agar lebih cantik
+import { User, Mail, Save } from 'lucide-react'; //icon
 
 export default function EditProfile() {
   // Ambil data user lama dari localStorage

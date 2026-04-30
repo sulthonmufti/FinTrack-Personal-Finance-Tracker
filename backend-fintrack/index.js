@@ -21,28 +21,47 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+// Middleware untuk verifikasi Token JWT
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  // Token biasanya dikirim dengan format "Bearer <TOKEN>"
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Akses ditolak, token tidak ada!" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res
+        .status(403)
+        .json({ message: "Token tidak valid atau sudah kadaluwarsa!" });
+    }
+    // Simpan data user dari token ke dalam request agar bisa dipakai di endpoint
+    req.user = user;
+    next(); // Lanjut ke fungsi endpoint berikutnya
+  });
+};
+
 // Endpoint untuk cek server
 app.get("/", (req, res) => {
   res.send("Server FinTrack di Drive D Berhasil Jalan!");
 });
 
-// Endpoint untuk mengambil data transaksi (untuk React nanti)
-app.get("/api/transactions", async (req, res) => {
+// Endpoint untuk mengambil data transaksi (untuk React nanti) + autentikasi
+app.get("/api/transactions", authenticateToken, async (req, res) => {
   try {
-    // Untuk sementara, kita hardcode dulu ke user_id 1
-    const userId = 1;
+    // Ambil ID dari token yang sudah diverifikasi middleware
+    const userId = req.user.id;
 
     const result = await pool.query(
-      `
-      SELECT t.*, c.name AS category, c.type 
-      FROM transactions t
-      JOIN categories c ON t.category_id = c.id
-      WHERE t.user_id = $1
-      ORDER BY t.transaction_date DESC
-    `,
+      `SELECT t.*, c.name AS category, c.type 
+       FROM transactions t
+       JOIN categories c ON t.category_id = c.id
+       WHERE t.user_id = $1
+       ORDER BY t.transaction_date DESC`,
       [userId],
     );
-
     res.json(result.rows);
   } catch (err) {
     res.status(500).send(err.message);
@@ -63,16 +82,22 @@ app.get("/api/categories", async (req, res) => {
 });
 
 //endpoint untuk menambahkan data transaksi (post)
-app.post("/api/transactions", async (req, res) => {
+// Perbaikan pada index.js
+app.post("/api/transactions", authenticateToken, async (req, res) => {
   try {
     const { amount, description, category_id } = req.body;
+    const userId = req.user.id; // Ini mengambil ID dari Token JWT kamu
+
     if (!amount || !description || !category_id) {
       return res.status(400).json({ message: "Data tidak lengkap" });
     }
+
+    // UPDATE: Tambahkan user_id di kolom dan di VALUES ($4)
     const newTransaction = await pool.query(
-      "INSERT INTO transactions (amount, description, category_id) VALUES ($1, $2, $3) RETURNING *",
-      [amount, description, category_id],
+      "INSERT INTO transactions (amount, description, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+      [amount, description, category_id, userId], // Pastikan userId dimasukkan di sini
     );
+
     res.json(newTransaction.rows[0]);
   } catch (err) {
     console.error("Error Input:", err.message);
@@ -143,15 +168,16 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-//Endpoint untuk Update Profile
-app.put("/api/auth/update-profile", async (req, res) => {
+//Endpoint untuk Update Profile + autentikasi
+app.put("/api/auth/update-profile", authenticateToken, async (req, res) => {
   try {
     const { id, username, email } = req.body;
+    const userId = req.user.id; // Gunakan ID dari token, bukan dari body agar lebih aman
 
-    // 1. Jalankan Query Update
+    //Jalankan Query Update
     const updatedUser = await pool.query(
       "UPDATE users SET username = $1, email = $2 WHERE id = $3 RETURNING id, username, email",
-      [username, email, id],
+      [username, email, userId],
     );
 
     if (updatedUser.rows.length === 0) {
