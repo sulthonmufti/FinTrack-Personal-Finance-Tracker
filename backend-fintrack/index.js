@@ -82,7 +82,6 @@ app.get("/api/categories", async (req, res) => {
 });
 
 //endpoint untuk menambahkan data transaksi (post)
-// Perbaikan pada index.js
 app.post("/api/transactions", authenticateToken, async (req, res) => {
   try {
     const { amount, description, category_id } = req.body;
@@ -194,6 +193,42 @@ app.put("/api/auth/update-profile", authenticateToken, async (req, res) => {
     res.status(500).json({
       message: "Gagal memperbarui profil. Mungkin email sudah digunakan.",
     });
+  }
+});
+
+//endpoint change password + autentikasi
+app.put("/api/auth/change-password", authenticateToken, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    //ambil password lama (verifikasi)
+    const user = await pool.query("SELECT password FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    //cek password lama cocok
+    const validPassword = await bcrypt.compare(
+      oldPassword,
+      user.rows[0].password,
+    );
+    if (!validPassword) {
+      return res.status(401).json({ message: "Password lama salah!" });
+    }
+
+    //hash password baru
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    //update ke database
+    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [
+      hashedNewPassword,
+      userId,
+    ]);
+
+    res.json({ message: "Password berhasil diperbarui!" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });
 
