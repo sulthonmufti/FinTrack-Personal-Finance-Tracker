@@ -34,7 +34,7 @@ export default function Wallets({ setIsSidebarOpen }) {
 
   const fetchCategories = () => {
     const token = localStorage.getItem('token');
-    axios.get('http://localhost:5000/api/categories', {
+    axios.get('http://localhost:5000/api/transactions/categories', {
       headers: {
         Authorization: `Bearer ${token}`
       }
