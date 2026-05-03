@@ -18,11 +18,11 @@ export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // 1. Hapus semua data di storage
+    // Hapus semua data di storage
     localStorage.clear();
-    // 2. Arahkan kembali ke halaman login
+    //Arahkan kembali ke halaman login
     navigate('/login');
-    // 3. Optional: Paksa reload untuk memastikan state aplikasi bersih
+    //Paksa reload untuk memastikan state aplikasi bersih
     window.location.reload();
   };
 
@@ -62,7 +62,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <NavItem icon={UserRoundPen} label="Edit Profile" to="/edit-profile" />
         </nav>
 
-        {/* --- BAGIAN BARU: Tombol Logout di paling bawah --- */}
+        {/* Tombol Logout di paling bawah */}
         <div className="mt-auto pt-4 border-t border-slate-100">
           <button 
             onClick={handleLogout}
