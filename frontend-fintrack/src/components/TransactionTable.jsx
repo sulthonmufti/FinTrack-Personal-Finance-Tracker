@@ -1,9 +1,12 @@
+import { Trash2 } from 'lucide-react'; // Impor icon Trash
+
 export default function TransactionTable({ 
   transactions, 
   filterCategory, 
   setFilterCategory, 
   categories, 
-  hideFilter
+  hideFilter,
+  onDelete
 }) {
   return (
     <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mb-10">
@@ -32,6 +35,7 @@ export default function TransactionTable({
               <th className="px-6 md:px-10 py-5">Description</th>
               <th className="px-6 md:px-10 py-5 text-center">Category</th>
               <th className="px-6 md:px-10 py-5 text-right">Amount</th>
+              {!hideFilter && <th className="px-6 md:px-10 py-5 text-center">Action</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -48,11 +52,22 @@ export default function TransactionTable({
                   <td className={`px-6 md:px-10 py-4 md:py-6 text-right text-sm font-bold whitespace-nowrap ${Number(item.amount) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {Number(item.amount) < 0 ? '-' : '+'} Rp {Math.abs(Number(item.amount)).toLocaleString('id-ID')}
                   </td>
+                  {/* Tombol Hapus */}
+                  {!hideFilter && (
+                    <td className="px-6 md:px-10 py-4 md:py-6 text-center">
+                      <button 
+                        onClick={() => onDelete(item.id)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="3" className="p-10 text-center text-slate-400 italic">
+                <td colSpan={hideFilter ? "3" : "4"} className="p-10 text-center text-slate-400 italic">
                   Belum ada transaksi terbaru.
                 </td>
               </tr>

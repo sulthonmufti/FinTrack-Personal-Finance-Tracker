@@ -48,4 +48,28 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
+// 4. endpoint hapus transaksi berdasarkan ID
+router.delete("/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      "DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING *",
+      [id, userId],
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "Transaksi tidak ditemukan atau Anda tidak memiliki akses",
+      });
+    }
+
+    res.json({ message: "Transaksi berhasil dihapus" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Gagal menghapus transaksi");
+  }
+});
+
 module.exports = router;

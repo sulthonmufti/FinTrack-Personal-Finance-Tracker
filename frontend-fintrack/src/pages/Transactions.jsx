@@ -35,6 +35,25 @@ export default function Transactions() {
     return matchesCategory && matchesSearch;
   });
 
+  // Function untuk delete
+  const handleDelete = async (id) => {
+    // Konfirmasi Pop-up
+    const confirmed = window.confirm("Apakah kamu yakin ingin menghapus transaksi ini?");
+    
+    if (confirmed) {
+      const token = localStorage.getItem('token');
+      try {
+        await axios.delete(`http://localhost:5000/api/transactions/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Refresh data setelah berhasil dihapus
+        fetchData(); 
+      } catch (err) {
+        alert("Gagal menghapus data: " + err.message);
+      }
+    }
+  };
+
   return (
     <>
       <header className="mb-10 flex justify-between items-center">
@@ -65,7 +84,8 @@ export default function Transactions() {
         categories={categories}
         filterCategory={filterCategory}
         setFilterCategory={setFilterCategory}
-        hideFilter={false} // Filter Muncul di Sini!
+        hideFilter={false}
+        onDelete={handleDelete} 
       />
     </>
   );
