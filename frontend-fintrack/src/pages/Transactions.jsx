@@ -3,12 +3,15 @@ import axios from 'axios';
 import { Table, Trash2, Search } from 'lucide-react';
 import TransactionTable from "../components/TransactionTable";
 import ProfileHeader from '../components/ProfileHeader';
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filterCategory, setFilterCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState(""); //state search
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   const fetchData = async () => {
     const token = localStorage.getItem('token');
@@ -35,22 +38,26 @@ export default function Transactions() {
     return matchesCategory && matchesSearch;
   });
 
-  // Function untuk delete
-  const handleDelete = async (id) => {
-    // Konfirmasi Pop-up
-    const confirmed = window.confirm("Apakah kamu yakin ingin menghapus transaksi ini?");
+  //buka Modal (panggil waktu klik icon sampah)
+  const openDeleteModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDeleteModalOpen(true);
+  };
+
+  //eksekusi delete (panggil waktu klik "Delete" di dalam Modal)
+  const confirmDelete = async () => {
+    if (!selectedTransaction) return;
     
-    if (confirmed) {
-      const token = localStorage.getItem('token');
-      try {
-        await axios.delete(`http://localhost:5000/api/transactions/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        // Refresh data setelah berhasil dihapus
-        fetchData(); 
-      } catch (err) {
-        alert("Gagal menghapus data: " + err.message);
-      }
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`http://localhost:5000/api/transactions/${selectedTransaction.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData(); // Refresh data tabel
+      setIsDeleteModalOpen(false); // Tutup modal
+      setSelectedTransaction(null); // Reset data terpilih
+    } catch (err) {
+      alert("Error: " + err.message);
     }
   };
 
@@ -85,7 +92,13 @@ export default function Transactions() {
         filterCategory={filterCategory}
         setFilterCategory={setFilterCategory}
         hideFilter={false}
-        onDelete={handleDelete} 
+        onDelete={openDeleteModal}
+      />
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        description={selectedTransaction?.description}
       />
     </>
   );

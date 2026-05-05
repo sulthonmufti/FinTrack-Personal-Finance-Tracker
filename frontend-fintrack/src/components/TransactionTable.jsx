@@ -56,7 +56,7 @@ export default function TransactionTable({
                   {!hideFilter && (
                     <td className="px-6 md:px-10 py-4 md:py-6 text-center">
                       <button 
-                        onClick={() => onDelete(item.id)}
+                        onClick={() => onDelete(item)}
                         className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
                       >
                         <Trash2 size={18} />
