@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { LayoutDashboard, Plus, RefreshCw, ArrowRight } from 'lucide-react';
+import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import { Link } from 'react-router-dom'; // Pastikan sudah install react-router-dom
 import TransactionModal from "../components/TransactionModal";
 import StatsGrid from "../components/StatsGrid";
@@ -90,37 +91,41 @@ export default function Dashboard({ setIsSidebarOpen }) {
 
   return (
     <>
-      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-3 bg-white border border-slate-200 rounded-2xl text-slate-600 shadow-sm"
-          >
-            <LayoutDashboard size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">Dashboard</h1>
-            <p className="text-slate-500 text-xs md:text-sm">Welcome back, here's your financial overview</p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="flex items-center gap-4">
+            {/* Hamburger Menu: Hanya muncul di Mobile/Tablet */}
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
+            >
+              <HiOutlineMenuAlt2 size={24} />
+            </button>
+
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Dashboard</h1>
+              <p className="text-slate-500 text-xs hidden md:block">Monitor your daily financial activity</p>
+            </div>
+          </div>
+
+          {/* ProfileHeader: Di Mobile akan pindah ke pojok kanan atas sejajar judul */}
+          <div className="md:hidden">
+            <ProfileHeader />
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end md:self-center">
-          <button 
-            onClick={fetchInitialData} 
-            className="p-3.5 border border-slate-200 rounded-2xl bg-white hover:bg-slate-50 transition-colors text-slate-600 hidden md:block"
-          >
-            <RefreshCw size={18} />
-          </button>
-          
+        <div className="flex items-center gap-3">
+          {/* Tombol Add Transaction: Lebar penuh di mobile, auto di desktop */}
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
           >
             <Plus size={20} />
-            <span className="hidden sm:inline">Add Transaction</span>
+            <span>Add Transaction</span>
           </button>
 
-          <div className="pl-2 border-l border-slate-200 ml-2 hidden sm:block">
+          {/* ProfileHeader: Di Desktop muncul di sini (setelah tombol) */}
+          <div className="hidden md:flex items-center pl-4 border-l border-slate-200 ml-2">
             <ProfileHeader />
           </div>
         </div>

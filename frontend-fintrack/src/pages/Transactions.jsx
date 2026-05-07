@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Search, Plus, Menu } from 'lucide-react'; 
+import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import TransactionTable from "../components/TransactionTable";
 import ProfileHeader from '../components/ProfileHeader';
 import TransactionModal from "../components/TransactionModal";
@@ -68,31 +69,41 @@ export default function Transactions({ setIsSidebarOpen }) {
 
   return (
     <>
-      {/* HEADER DISAMAKAN DENGAN DASHBOARD */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-3 bg-white border border-slate-200 rounded-2xl text-slate-600 shadow-sm active:scale-95 transition-all"
-          >
-            <Menu size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">All Transactions</h1>
-            <p className="text-slate-500 text-sm">Manage your full financial history</p>
+      {/* header */}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="flex items-center gap-4">
+            {/* Tombol Menu Modern */}
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
+            >
+              <HiOutlineMenuAlt2 size={24} />
+            </button>
+
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Transactions</h1>
+              <p className="text-slate-500 text-xs hidden md:block">Manage your history</p>
+            </div>
+          </div>
+
+          {/* ProfileHeader untuk Mobile (Pindah ke samping judul) */}
+          <div className="md:hidden">
+            <ProfileHeader />
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end md:self-center">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
           >
             <Plus size={20} />
-            <span className="hidden sm:inline">Add Transaction</span>
+            <span>Add Transaction</span>
           </button>
 
-          <div className="pl-2 border-l border-slate-200 ml-2 hidden sm:block">
+          {/* ProfileHeader untuk Desktop (Muncul di kanan tombol) */}
+          <div className="hidden md:block pl-4 border-l border-slate-200 ml-2">
             <ProfileHeader />
           </div>
         </div>
