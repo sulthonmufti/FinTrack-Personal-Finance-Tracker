@@ -22,10 +22,12 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 // 2. Ambil semua kategori (untuk dropdown) (endpoint /api/transactions/categories)
-router.get("/categories", async (req, res) => {
+router.get("/categories", authenticateToken, async (req, res) => {
   try {
+    const userId = req.user.id; // Pastikan menggunakan middleware authenticateToken
     const result = await pool.query(
-      "SELECT * FROM categories ORDER BY name ASC",
+      "SELECT * FROM categories WHERE user_id = $1 ORDER BY name ASC",
+      [userId],
     );
     res.json(result.rows);
   } catch (err) {
@@ -69,6 +71,23 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Gagal menghapus transaksi");
+  }
+});
+
+// 5. endpoint tambah kategori baru
+router.post("/categories", authenticateToken, async (req, res) => {
+  try {
+    const { name, type } = req.body; // type: 'income' atau 'expense'
+    const userId = req.user.id;
+
+    const newCategory = await pool.query(
+      "INSERT INTO categories (name, type, user_id) VALUES ($1, $2, $3) RETURNING *",
+      [name, type, userId],
+    );
+
+    res.json(newCategory.rows[0]);
+  } catch (err) {
+    res.status(500).send("Gagal menambah kategori");
   }
 });
 

@@ -7,18 +7,68 @@ const authenticateToken = require("../middleware/authMiddleware"); // Import mid
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Endpoint Register
+// Endpoint Register dengan Kategori Default
 router.post("/register", async (req, res) => {
+  const client = await pool.connect();
   try {
     const { username, email, password } = req.body;
+
+    // VALIDASI: Cek apakah user sudah ada
+    const userExist = await client.query(
+      "SELECT * FROM users WHERE email = $1 OR username = $2",
+      [email, username],
+    );
+    if (userExist.rows.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "Username atau Email sudah digunakan" });
+    }
+
+    await client.query("BEGIN");
+
+    //hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await pool.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email",
+
+    //buat user baru
+    const userRes = await client.query(
+      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id",
       [username, email, hashedPassword],
     );
-    res.json({ message: "User berhasil dibuat!", user: newUser.rows[0] });
+    const newUserId = userRes.rows[0].id;
+
+    //kategori Default untuk User Baru
+    const defaultCategories = [
+      ["Gaji", "income", newUserId],
+      ["Makanan", "expense", newUserId],
+    ];
+
+    for (let cat of defaultCategories) {
+      await client.query(
+        "INSERT INTO categories (name, type, user_id) VALUES ($1, $2, $3)",
+        cat,
+      );
+    }
+
+    await client.query("COMMIT");
+    //buat token setelah proses register berhasil
+    const token = jwt.sign({ id: newUserId, username: username }, JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    res.status(201).json({
+      message: "User berhasil terdaftar",
+      token,
+      user: {
+        id: newUserId,
+        username: username,
+        email: email,
+      },
+    });
   } catch (err) {
-    res.status(500).json({ message: "Username atau Email sudah terdaftar" });
+    await client.query("ROLLBACK");
+    console.error("Register Error:", err.message);
+    res.status(500).json({ message: "Terjadi kesalahan pada server" });
+  } finally {
+    client.release();
   }
 });
 
@@ -53,69 +103,6 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).send("Terjadi kesalahan pada server");
-  }
-});
-
-// Endpoint Pendaftaran User
-router.post("/api/auth/register", async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-
-    // Hash password sebelum disimpan ke DB agar aman
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await pool.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email",
-      [username, email, hashedPassword],
-    );
-
-    res.json({ message: "User berhasil dibuat!", user: newUser.rows[0] });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: "Username atau Email sudah terdaftar" });
-  }
-});
-
-// Endpoint Login User
-router.post("/api/auth/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // 1. Cari user berdasarkan email
-    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-
-    if (user.rows.length === 0) {
-      return res.status(401).json({ message: "Email tidak terdaftar" });
-    }
-
-    // 2. Bandingkan password yang diinput dengan yang ada di DB (yang sudah di-hash)
-    const validPassword = await bcrypt.compare(password, user.rows[0].password);
-
-    if (!validPassword) {
-      return res.status(401).json({ message: "Password salah!" });
-    }
-
-    // 3. Buat Token JWT sebagai "ID Card" digital
-    const token = jwt.sign(
-      { id: user.rows[0].id, username: user.rows[0].username },
-      JWT_SECRET,
-      { expiresIn: "24h" }, // Token berlaku selama 24 jam
-    );
-
-    res.json({
-      message: "Login Berhasil!",
-      token,
-      user: {
-        id: user.rows[0].id,
-        username: user.rows[0].username,
-        email: user.rows[0].email,
-      },
-    });
-  } catch (err) {
-    console.error(err.message);
     res.status(500).send("Terjadi kesalahan pada server");
   }
 });

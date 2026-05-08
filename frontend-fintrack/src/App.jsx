@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Wallets from './pages/Wallets';
 import EditProfile from './pages/EditProfile';
 import Transactions from './pages/Transactions';
+import Register from './pages/Register';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,10 +30,13 @@ function App() {
         <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative">
           <div className="p-4 md:p-8 max-w-[1440px] w-full mx-auto">
             <Routes>
+              {/* ----- Public Routes: Bisa diakses siapa saja -----*/}
               {/* Login Page */}
               <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+              {/* Register */}
+              <Route path="/register" element={<Register />} />
 
-              {/* Protected Routes */}
+              {/* ----- Protected Routes ------*/}
               <Route path="/dashboard" element={isAuthenticated ? <Dashboard setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
               
               <Route path="/transactions" element={isAuthenticated ? <Transactions setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -63,6 +64,12 @@ export default function Login() {
             className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
             Sign In
           </button>
+          <p className="text-center mt-8 text-slate-500 text-sm">
+            Don't have an account? {' '}
+            <Link to="/register" className="text-indigo-600 font-bold hover:underline transition-all">
+              Create Account
+            </Link>
+          </p>
         </form>
       </div>
     </div>
