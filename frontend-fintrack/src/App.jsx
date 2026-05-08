@@ -49,7 +49,7 @@ function App() {
               {/* Placeholder untuk halaman yang belum dibuat agar tidak putih/error */}
               <Route path="/reports" element={isAuthenticated ? <div className="p-8"><h1>Reports Page (Coming Soon)</h1></div> : <Navigate to="/login" />} />
               
-              <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" />} />
+              <Route path="/settings" element={<Settings setIsSidebarOpen={setIsSidebarOpen} />} />
 
               {/* Catch-all Route diletakkan paling bawah */}
               <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
