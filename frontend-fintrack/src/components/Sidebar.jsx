@@ -59,7 +59,6 @@ export default function Sidebar({ isOpen, onClose }) {
           <NavItem icon={ArrowLeftRight} label="Transactions" to="/transactions" />
           <NavItem icon={BarChart3} label="Reports" to="/reports" />
           <NavItem icon={Settings} label="Settings" to="/settings" />
-          <NavItem icon={UserRoundPen} label="Edit Profile" to="/edit-profile" />
         </nav>
 
         {/* Tombol Logout di paling bawah */}

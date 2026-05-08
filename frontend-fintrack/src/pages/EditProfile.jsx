@@ -1,3 +1,6 @@
+//HALAMAN EDIT PROFIL SUDAH TIDAK DIGUNAKAN
+//DIGANTI DENGAN HALAMAN SETTINGS
+
 import { useState } from "react";
 import axios from "axios";
 import { User, Mail, Save, Lock, ShieldCheck } from "lucide-react";
