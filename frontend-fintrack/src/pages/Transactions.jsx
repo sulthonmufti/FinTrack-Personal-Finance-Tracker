@@ -65,7 +65,10 @@ export default function Transactions({ setIsSidebarOpen }) {
     const matchesCategory = filterCategory === 'All' ? true : item.category === filterCategory;
     const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
-  });
+  })
+  //sorting berdasarkan ID terbesar (terbaru) ke terkecil
+  .sort((a, b) => b.id - a.id);
+  
 
   return (
     <>

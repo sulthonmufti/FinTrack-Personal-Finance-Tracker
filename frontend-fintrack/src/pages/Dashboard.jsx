@@ -87,7 +87,9 @@ export default function Dashboard({ setIsSidebarOpen }) {
   }).filter(data => data.value > 0);
 
   // HANYA TAMPILKAN 5 TRANSAKSI TERAKHIR UNTUK DASHBOARD
-  const recentTransactions = transactions.slice(0, 5);
+  const recentTransactions = [...transactions]
+  .sort((a, b) => b.id - a.id)
+  .slice(0, 5);
 
   return (
     <>
