@@ -24,6 +24,27 @@ export default function Transactions({ setIsSidebarOpen }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
+  const [filterMonth, setFilterMonth] = useState('All');
+  const [filterYear, setFilterYear] = useState('All');
+
+  // Definisikan daftar bulan secara statis
+  const months = [
+    { val: '01', name: 'Januari' }, { val: '02', name: 'Februari' }, { val: '03', name: 'Maret' },
+    { val: '04', name: 'April' }, { val: '05', name: 'Mei' }, { val: '06', name: 'Juni' },
+    { val: '07', name: 'Juli' }, { val: '08', name: 'Agustus' }, { val: '09', name: 'September' },
+    { val: '10', name: 'Oktober' }, { val: '11', name: 'November' }, { val: '12', name: 'Desember' }
+  ];
+
+  // Logika untuk mendapatkan daftar Tahun yang unik dari data transaksi
+  const dynamicYears = transactions.length > 0 
+    ? [...new Set(transactions.map(item => {
+        const d = new Date(item.transaction_date);
+        return isNaN(d.getTime()) ? null : d.getFullYear().toString();
+      }))]
+      .filter(year => year !== null)
+      .sort((a, b) => b - a)
+    : [];
+
   const fetchData = async () => {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
@@ -62,9 +83,18 @@ export default function Transactions({ setIsSidebarOpen }) {
   };
 
   const filteredData = transactions.filter(item => {
+    const date = new Date(item.transaction_date);
+    if (isNaN(date.getTime())) return false; // Abaikan jika tanggal tidak valid
+
+    const itemMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+    const itemYear = date.getFullYear().toString();
+
     const matchesCategory = filterCategory === 'All' ? true : item.category === filterCategory;
     const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesMonth = filterMonth === 'All' ? true : itemMonth === filterMonth;
+    const matchesYear = filterYear === 'All' ? true : itemYear === filterYear;
+
+    return matchesCategory && matchesSearch && matchesMonth && matchesYear;
   })
   //sorting berdasarkan ID terbesar (terbaru) ke terkecil
   .sort((a, b) => b.id - a.id);
@@ -76,7 +106,7 @@ export default function Transactions({ setIsSidebarOpen }) {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div className="flex items-center justify-between w-full md:w-auto">
           <div className="flex items-center gap-4">
-            {/* Tombol Menu Modern */}
+            {/* Tombol Menu */}
             <button 
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
@@ -90,7 +120,7 @@ export default function Transactions({ setIsSidebarOpen }) {
             </div>
           </div>
 
-          {/* ProfileHeader untuk Mobile (Pindah ke samping judul) */}
+          {/* ProfileHeader untuk Mobile */}
           <div className="md:hidden">
             <ProfileHeader />
           </div>
@@ -105,25 +135,49 @@ export default function Transactions({ setIsSidebarOpen }) {
             <span>Add Transaction</span>
           </button>
 
-          {/* ProfileHeader untuk Desktop (Muncul di kanan tombol) */}
+          {/* ProfileHeader untuk Desktop */}
           <div className="hidden md:block pl-4 border-l border-slate-200 ml-2">
             <ProfileHeader />
           </div>
         </div>
       </header>
 
-      {/* SEARCH BAR */}
-      <div className="mb-6 relative max-w-md">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-          <Search size={18} />
+      {/* FILTER & SEARCH */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-8">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+            <Search size={18} />
+          </div>
+          <input 
+            type="text"
+            placeholder="Search transactions..."
+            className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-sm text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <input 
-          type="text"
-          placeholder="Search transactions..."
-          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+
+        <div className="grid grid-cols-2 lg:flex gap-3 lg:w-auto">
+          <select 
+            className="w-full lg:w-40 bg-white border border-slate-200 text-slate-600 text-xs font-bold px-4 py-3.5 rounded-2xl outline-none cursor-pointer shadow-sm appearance-none"
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+          >
+            <option value="All">All Months</option>
+            {months.map(m => <option key={m.val} value={m.val}>{m.name}</option>)}
+          </select>
+
+          <select 
+            className="w-full lg:w-32 bg-white border border-slate-200 text-slate-600 text-xs font-bold px-4 py-3.5 rounded-2xl outline-none cursor-pointer shadow-sm appearance-none"
+            value={filterYear}
+            onChange={(e) => setFilterYear(e.target.value)}
+          >
+            <option value="All">All Years</option>
+            {dynamicYears.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* TABEL */}
