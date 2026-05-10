@@ -8,6 +8,8 @@ export default function TransactionTable({
   hideFilter,
   onDelete 
 }) {
+  const hasData = transactions && transactions.length > 0;
+
   return (
     <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mb-10">
       {/* Header Tabel (Desktop & Mobile) */}
@@ -27,9 +29,9 @@ export default function TransactionTable({
         )}
       </div>
 
-      {/* TAMPILAN MOBILE (Card Layout) - Hanya muncul di layar kecil */}
+      {/* TAMPILAN MOBILE (Card Layout) */}
       <div className="block md:hidden">
-        {transactions && transactions.length > 0 ? (
+        {hasData ? (
           <div className="divide-y divide-slate-50">
             {transactions.map((item) => (
               <div key={item.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
@@ -39,7 +41,10 @@ export default function TransactionTable({
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[9px] font-bold uppercase tracking-wider">
                       {item.category}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">12 Mei 2026</span>
+                    {/* Disarankan tanggal diambil dari item.transaction_date agar dinamis */}
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {new Date(item.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
                   </div>
                 </div>
                 
@@ -61,7 +66,7 @@ export default function TransactionTable({
             ))}
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 italic text-sm">Tidak ada transaksi</div>
+          <div className="p-10 text-center text-slate-400 italic text-sm">No transactions found</div>
         )}
       </div>
 
@@ -77,29 +82,37 @@ export default function TransactionTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {transactions.map(item => (
-              <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                <td className="px-10 py-6 text-sm font-semibold text-slate-700">{item.description}</td>
-                <td className="px-10 py-6 text-center">
-                  <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold uppercase">
-                    {item.category}
-                  </span>
-                </td>
-                <td className={`px-10 py-6 text-right text-sm font-bold ${Number(item.amount) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  {Number(item.amount) < 0 ? '-' : '+'} Rp {Math.abs(Number(item.amount)).toLocaleString('id-ID')}
-                </td>
-                {!hideFilter && (
+            {hasData ? (
+              transactions.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                  <td className="px-10 py-6 text-sm font-semibold text-slate-700">{item.description}</td>
                   <td className="px-10 py-6 text-center">
-                    <button 
-                      onClick={() => onDelete(item)}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold uppercase">
+                      {item.category}
+                    </span>
                   </td>
-                )}
+                  <td className={`px-10 py-6 text-right text-sm font-bold ${Number(item.amount) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {Number(item.amount) < 0 ? '-' : '+'} Rp {Math.abs(Number(item.amount)).toLocaleString('id-ID')}
+                  </td>
+                  {!hideFilter && (
+                    <td className="px-10 py-6 text-center">
+                      <button 
+                        onClick={() => onDelete(item)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={hideFilter ? 3 : 4} className="px-10 py-12 text-center text-slate-400 italic text-sm">
+                  No transactions found
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
