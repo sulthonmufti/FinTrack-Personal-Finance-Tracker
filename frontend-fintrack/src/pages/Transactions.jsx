@@ -84,7 +84,7 @@ export default function Transactions({ setIsSidebarOpen }) {
 
   const filteredData = transactions.filter(item => {
     const date = new Date(item.transaction_date);
-    if (isNaN(date.getTime())) return false; // Abaikan jika tanggal tidak valid
+    if (isNaN(date.getTime())) return false;
 
     const itemMonth = (date.getMonth() + 1).toString().padStart(2, '0');
     const itemYear = date.getFullYear().toString();
@@ -95,10 +95,23 @@ export default function Transactions({ setIsSidebarOpen }) {
     const matchesYear = filterYear === 'All' ? true : itemYear === filterYear;
 
     return matchesCategory && matchesSearch && matchesMonth && matchesYear;
-  })
-  //sorting berdasarkan ID terbesar (terbaru) ke terkecil
-  .sort((a, b) => b.id - a.id);
-  
+  }).sort((a, b) => b.id - a.id);
+
+// 2. Baru kemudian hitung Pagination menggunakan filteredData yang sudah ada
+const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 10;
+
+// Reset page ke 1 jika filter berubah
+useEffect(() => {
+  setCurrentPage(1);
+}, [searchTerm, filterCategory, filterMonth, filterYear]);
+
+const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+// 3. Potong data untuk ditampilkan di tabel
+const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <>
@@ -182,12 +195,16 @@ export default function Transactions({ setIsSidebarOpen }) {
 
       {/* TABEL */}
       <TransactionTable 
-        transactions={filteredData}
+        transactions={currentItems}
         categories={categories}
         filterCategory={filterCategory}
         setFilterCategory={setFilterCategory}
         hideFilter={false}
         onDelete={(item) => { setSelectedTransaction(item); setIsDeleteModalOpen(true); }}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        setCurrentPage={setCurrentPage}
+        totalItems={filteredData.length}
       />
 
       {/* MODALS */}

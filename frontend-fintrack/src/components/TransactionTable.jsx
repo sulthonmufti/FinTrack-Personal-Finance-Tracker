@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TransactionTable({ 
   transactions, 
@@ -6,7 +6,11 @@ export default function TransactionTable({
   setFilterCategory, 
   categories, 
   hideFilter,
-  onDelete 
+  onDelete,
+  currentPage,
+  totalPages,
+  setCurrentPage,
+  totalItems
 }) {
   const hasData = transactions && transactions.length > 0;
 
@@ -116,6 +120,48 @@ export default function TransactionTable({
           </tbody>
         </table>
       </div>
+      {/* FOOTER PAGINATION */}
+      {hasData && totalPages > 1 && (
+        <div className="px-6 py-5 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30">
+          <p className="text-xs text-slate-500 font-medium">
+            Showing <span className="text-slate-800 font-bold">{transactions.length}</span> of <span className="text-slate-800 font-bold">{totalItems}</span> transactions
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${
+                    currentPage === i + 1 
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
