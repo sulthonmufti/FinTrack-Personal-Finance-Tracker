@@ -105,6 +105,10 @@ const itemsPerPage = 10;
 useEffect(() => {
   setCurrentPage(1);
 }, [searchTerm, filterCategory, filterMonth, filterYear]);
+//otomatis scroll ke atas tabel saat pindah halaman
+useEffect(() => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [currentPage]);
 
 const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 const indexOfLastItem = currentPage * itemsPerPage;
