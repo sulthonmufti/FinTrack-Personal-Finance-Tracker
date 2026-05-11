@@ -91,4 +91,27 @@ router.post("/categories", authenticateToken, async (req, res) => {
   }
 });
 
+// 6. endpoint edit transaksi berdasarkan ID
+router.put("/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, description, category_id } = req.body;
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      "UPDATE transactions SET amount = $1, description = $2, category_id = $3 WHERE id = $4 AND user_id = $5 RETURNING *",
+      [amount, description, category_id, id, userId],
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Gagal memperbarui transaksi");
+  }
+});
+
 module.exports = router;

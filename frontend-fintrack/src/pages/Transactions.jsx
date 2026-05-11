@@ -62,26 +62,6 @@ export default function Transactions({ setIsSidebarOpen }) {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleAddTransaction = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    const token = localStorage.getItem('token');
-    try {
-      await axios.post('http://localhost:5000/api/transactions', 
-        { description, amount: Number(amount), category_id: categoryId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchData();
-      setIsAddModalOpen(false);
-      setDescription('');
-      setAmount('');
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const filteredData = transactions.filter(item => {
     const date = new Date(item.transaction_date);
     if (isNaN(date.getTime())) return false;
@@ -97,25 +77,90 @@ export default function Transactions({ setIsSidebarOpen }) {
     return matchesCategory && matchesSearch && matchesMonth && matchesYear;
   }).sort((a, b) => b.id - a.id);
 
-// 2. Baru kemudian hitung Pagination menggunakan filteredData yang sudah ada
-const [currentPage, setCurrentPage] = useState(1);
-const itemsPerPage = 10;
+  // 2. Baru kemudian hitung Pagination menggunakan filteredData yang sudah ada
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-// Reset page ke 1 jika filter berubah
-useEffect(() => {
-  setCurrentPage(1);
-}, [searchTerm, filterCategory, filterMonth, filterYear]);
-//otomatis scroll ke atas tabel saat pindah halaman
-useEffect(() => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}, [currentPage]);
+  // Reset page ke 1 jika filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterMonth, filterYear]);
+  //otomatis scroll ke atas tabel saat pindah halaman
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
 
-const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
-// 3. Potong data untuk ditampilkan di tabel
-const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  // 3. Potong data untuk ditampilkan di tabel
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  // State Edit
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  const handleEditClick = (transaction) => {
+    setIsEditMode(true);
+    setEditingId(transaction.id);
+    setDescription(transaction.description);
+    setAmount(Math.abs(transaction.amount)); // Simpan sebagai angka positif di input
+    setCategoryId(transaction.category_id); // Gunakan ID kategori dari database
+    setIsAddModalOpen(true);
+  };
+  
+  //fungsi untuk menambahkan dan mengedit transaksi
+  const handleFormSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setIsLoading(true);
+    const token = localStorage.getItem('token');
+
+    // Temukan kategori yang dipilih untuk mengecek tipenya
+    const selectedCategory = categories.find(cat => cat.id === Number(categoryId));
+    const isExpense = selectedCategory?.type === 'expense';
+
+    // Pastikan amount bernilai negatif jika tipenya expense, dan positif jika income
+    const numericAmount = parseFloat(amount);
+    const finalAmount = isExpense ? -Math.abs(numericAmount) : Math.abs(numericAmount);
+    
+    const payload = { 
+      description, 
+      amount: finalAmount, 
+      category_id: categoryId
+    };
+
+    try {
+      if (isEditMode) {
+        // MODE EDIT
+        await axios.put(`http://localhost:5000/api/transactions/${editingId}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        // MODE TAMBAH
+        await axios.post('http://localhost:5000/api/transactions', payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+
+      fetchData(); // Refresh tabel
+      closeModal(); // Tutup dan reset
+    } catch (err) {
+      console.error("Gagal menyimpan:", err);
+      alert("Gagal menyimpan transaksi");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setIsAddModalOpen(false);
+    setIsEditMode(false);
+    setEditingId(null);
+    setDescription('');
+    setAmount('');
+    setCategoryId(categories.length > 0 ? categories[0].id : 1); 
+};
 
   return (
     <>
@@ -205,6 +250,7 @@ const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
         setFilterCategory={setFilterCategory}
         hideFilter={false}
         onDelete={(item) => { setSelectedTransaction(item); setIsDeleteModalOpen(true); }}
+        onEdit={handleEditClick}
         currentPage={currentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}
@@ -214,9 +260,9 @@ const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
       {/* MODALS */}
       <TransactionModal 
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={closeModal} // Gunakan fungsi closeModal yang baru
         categories={categories}
-        onSubmit={handleAddTransaction}
+        onSubmit={handleFormSubmit} // Gunakan fungsi handleFormSubmit yang baru
         isLoading={isLoading}
         description={description}
         setDescription={setDescription}
@@ -224,6 +270,7 @@ const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
         setAmount={setAmount}
         categoryId={categoryId}
         setCategoryId={setCategoryId}
+        title={isEditMode ? "Edit Transaction" : "Add Transaction"} // Judul dinamis
       />
 
       <DeleteConfirmModal 

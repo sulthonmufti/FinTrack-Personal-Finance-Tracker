@@ -1,4 +1,4 @@
-import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 
 export default function TransactionTable({ 
   transactions, 
@@ -7,6 +7,7 @@ export default function TransactionTable({
   categories, 
   hideFilter,
   onDelete,
+  onEdit,
   currentPage,
   totalPages,
   setCurrentPage,
@@ -59,6 +60,15 @@ export default function TransactionTable({
                   
                   {!hideFilter && (
                     <button 
+                      onClick={() => onEdit(item)}
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+
+                  {!hideFilter && (
+                    <button 
                       onClick={() => onDelete(item)}
                       className="p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90"
                     >
@@ -100,6 +110,12 @@ export default function TransactionTable({
                   </td>
                   {!hideFilter && (
                     <td className="px-10 py-6 text-center">
+                      <button 
+                        onClick={() => onEdit(item)}
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                      >
+                        <Edit2 size={18} />
+                      </button>
                       <button 
                         onClick={() => onDelete(item)}
                         className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
