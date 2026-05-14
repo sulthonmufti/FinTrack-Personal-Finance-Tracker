@@ -1,4 +1,5 @@
-import { Trash2, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, Edit2, MoreVertical } from 'lucide-react';
+import { useState } from 'react';
 
 export default function TransactionTable({ 
   transactions, 
@@ -14,6 +15,7 @@ export default function TransactionTable({
   totalItems
 }) {
   const hasData = transactions && transactions.length > 0;
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   return (
     <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mb-10">
@@ -40,42 +42,72 @@ export default function TransactionTable({
           <div className="divide-y divide-slate-50">
             {transactions.map((item) => (
               <div key={item.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-bold text-slate-800">{item.description}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[9px] font-bold uppercase tracking-wider">
+                
+                {/* SISI KIRI: Informasi Utama Transaksi */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-bold text-slate-800 leading-tight">
+                    {item.description}
+                  </span>
+                  
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Badge Kategori */}
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold uppercase tracking-wider">
                       {item.category}
                     </span>
-                    {/* Disarankan tanggal diambil dari item.transaction_date agar dinamis */}
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {new Date(item.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    
+                    {/* TANGGAL TRANSAKSI (Kembali Ditambahkan) */}
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {new Date(item.transaction_date).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </span>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                {/* SISI KANAN: Nominal Uang & Tombol Menu Titik Tiga */}
+                <div className="flex items-center gap-2">
                   <span className={`text-sm font-black ${Number(item.amount) < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
                     {Number(item.amount) < 0 ? '-' : '+'} Rp {Math.abs(Number(item.amount)).toLocaleString('id-ID')}
                   </span>
                   
-                  {!hideFilter && (
+                  {/* Dropdown Action Menu */}
+                  <div className="relative">
                     <button 
-                      onClick={() => onEdit(item)}
-                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                      onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                      className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-all active:scale-95"
                     >
-                      <Edit2 size={18} />
+                      <MoreVertical size={20} />
                     </button>
-                  )}
 
-                  {!hideFilter && (
-                    <button 
-                      onClick={() => onDelete(item)}
-                      className="p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+                    {/* Dropdown Menu Overlay */}
+                    {openMenuId === item.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setOpenMenuId(null)}
+                        />
+                        
+                        <div className="absolute right-0 mt-1 w-32 bg-white border border-slate-100 rounded-2xl shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                          <button 
+                            onClick={() => { onEdit(item); setOpenMenuId(null); }}
+                            className="w-full flex items-center gap-2 px-4 py-3 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                          >
+                            <Edit2 size={14} /> Edit
+                          </button>
+                          <button 
+                            onClick={() => { onDelete(item); setOpenMenuId(null); }}
+                            className="w-full flex items-center gap-2 px-4 py-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-50"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
+
               </div>
             ))}
           </div>
@@ -89,6 +121,7 @@ export default function TransactionTable({
         <table className="w-full text-left">
           <thead className="bg-slate-50/50 text-slate-400 text-[10px] font-bold uppercase tracking-[0.1em]">
             <tr>
+              <th className="px-10 py-5">Date</th> {/* Kolom baru */}
               <th className="px-10 py-5">Description</th>
               <th className="px-10 py-5 text-center">Category</th>
               <th className="px-10 py-5 text-right">Amount</th>
@@ -99,36 +132,57 @@ export default function TransactionTable({
             {hasData ? (
               transactions.map(item => (
                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                  
+                  {/* TANGGAL TRANSAKSI */}
+                  <td className="px-10 py-6 text-sm text-slate-500 font-medium">
+                    {new Date(item.transaction_date).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </td>
+
+                  {/* DESKRIPSI */}
                   <td className="px-10 py-6 text-sm font-semibold text-slate-700">{item.description}</td>
+                  
+                  {/* KATEGORI */}
                   <td className="px-10 py-6 text-center">
                     <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold uppercase">
                       {item.category}
                     </span>
                   </td>
+
+                  {/* NOMINAL */}
                   <td className={`px-10 py-6 text-right text-sm font-bold ${Number(item.amount) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {Number(item.amount) < 0 ? '-' : '+'} Rp {Math.abs(Number(item.amount)).toLocaleString('id-ID')}
                   </td>
+
+                  {/* TOMBOL AKSI */}
                   {!hideFilter && (
                     <td className="px-10 py-6 text-center">
-                      <button 
-                        onClick={() => onEdit(item)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button 
-                        onClick={() => onDelete(item)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button 
+                          onClick={() => onEdit(item)}
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => onDelete(item)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   )}
+
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={hideFilter ? 3 : 4} className="px-10 py-12 text-center text-slate-400 italic text-sm">
+                {/* Nilai colSpan disesuaikan menjadi 4 atau 5 karena kolom bertambah */}
+                <td colSpan={hideFilter ? 4 : 5} className="px-10 py-12 text-center text-slate-400 italic text-sm">
                   No transactions found
                 </td>
               </tr>
