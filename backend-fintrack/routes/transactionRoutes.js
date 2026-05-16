@@ -38,14 +38,15 @@ router.get("/categories", authenticateToken, async (req, res) => {
 // 3. Tambah transaksi baru (endpoint /api/transactions/)
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    const { amount, description, category_id } = req.body;
+    const { amount, description, category_id, transaction_date } = req.body; 
     const userId = req.user.id;
     const newTransaction = await pool.query(
-      "INSERT INTO transactions (amount, description, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
-      [amount, description, category_id, userId],
+      "INSERT INTO transactions (amount, description, category_id, user_id, transaction_date) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [amount, description, category_id, userId, transaction_date],
     );
     res.json(newTransaction.rows[0]);
   } catch (err) {
+    console.error(err.message); // menampilkan detail jika error
     res.status(500).send("Gagal menyimpan transaksi");
   }
 });

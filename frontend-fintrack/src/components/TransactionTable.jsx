@@ -121,7 +121,7 @@ export default function TransactionTable({
         <table className="w-full text-left">
           <thead className="bg-slate-50/50 text-slate-400 text-[10px] font-bold uppercase tracking-[0.1em]">
             <tr>
-              <th className="px-10 py-5">Date</th> {/* Kolom baru */}
+              <th className="px-10 py-5">Date</th>
               <th className="px-10 py-5">Description</th>
               <th className="px-10 py-5 text-center">Category</th>
               <th className="px-10 py-5 text-right">Amount</th>

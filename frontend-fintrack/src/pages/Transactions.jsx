@@ -12,6 +12,15 @@ export default function Transactions({ setIsSidebarOpen }) {
   const [categories, setCategories] = useState([]);
   const [filterCategory, setFilterCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Ambil format tanggal hari ini (YYYY-MM-DD) sebagai nilai default awal
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   
   // State Modal Tambah
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -19,6 +28,7 @@ export default function Transactions({ setIsSidebarOpen }) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(1);
+  const [transactionDate, setTransactionDate] = useState(getTodayDateString());
 
   // State Modal Hapus
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -107,6 +117,11 @@ export default function Transactions({ setIsSidebarOpen }) {
     setDescription(transaction.description);
     setAmount(Math.abs(transaction.amount)); // Simpan sebagai angka positif di input
     setCategoryId(transaction.category_id); // Gunakan ID kategori dari database
+
+    // Format tanggal dari database (ISO String / Timestamp) menjadi YYYY-MM-DD
+    const formattedDate = transaction.transaction_date ? transaction.transaction_date.split('T')[0] : getTodayDateString();
+    setTransactionDate(formattedDate);
+
     setIsAddModalOpen(true);
   };
   
@@ -127,7 +142,8 @@ export default function Transactions({ setIsSidebarOpen }) {
     const payload = { 
       description, 
       amount: finalAmount, 
-      category_id: categoryId
+      category_id: categoryId,
+      transaction_date: transactionDate
     };
 
     try {
@@ -159,7 +175,8 @@ export default function Transactions({ setIsSidebarOpen }) {
     setEditingId(null);
     setDescription('');
     setAmount('');
-    setCategoryId(categories.length > 0 ? categories[0].id : 1); 
+    setCategoryId(categories.length > 0 ? categories[0].id : 1);
+    setTransactionDate(getTodayDateString());
 };
 
   return (
@@ -270,6 +287,8 @@ export default function Transactions({ setIsSidebarOpen }) {
         setAmount={setAmount}
         categoryId={categoryId}
         setCategoryId={setCategoryId}
+        transactionDate={transactionDate}
+        setTransactionDate={setTransactionDate}
         title={isEditMode ? "Edit Transaction" : "Add Transaction"} // Judul dinamis
       />
 

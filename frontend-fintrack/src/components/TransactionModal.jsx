@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { formatRupiah } from '../utils/formatters';
 
 export default function TransactionModal({ 
@@ -14,6 +14,8 @@ export default function TransactionModal({
   setAmount,
   categoryId,
   setCategoryId,
+  transactionDate,
+  setTransactionDate,
   title
 }) {
   // State untuk melacak tab aktif ('expense' atau 'income')
@@ -78,6 +80,20 @@ export default function TransactionModal({
         </div>
 
         <form onSubmit={onSubmit} className="p-6 space-y-4">
+          {/* Input Pilihan Tanggal Transaksi */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-600 mb-2">Transaction Date</label>
+            <div className="relative flex items-center">
+              <Calendar size={18} className="absolute left-4 text-slate-400 pointer-events-none" />
+              <input 
+                type="date" 
+                value={transactionDate}
+                onChange={(e) => setTransactionDate(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700 cursor-pointer"
+                required
+              />
+            </div>
+          </div>
           {/* Dropdown Kategori (Sudah terfilter) */}
           <div>
             <label className="block text-sm font-semibold text-slate-600 mb-2">Category</label>
