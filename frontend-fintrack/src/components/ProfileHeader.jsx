@@ -11,7 +11,8 @@ export default function ProfileHeader() {
 
   return (
     <Link 
-      to="/edit-profile" 
+      // to="/edit-profile" 
+      to="/settings" 
       className="flex items-center gap-3 bg-white p-1 md:p-1.5 md:pr-4 rounded-full border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-indigo-200 cursor-pointer group"
     >
       {/* Avatar Bulat */}
