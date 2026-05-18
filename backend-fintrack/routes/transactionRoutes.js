@@ -3,21 +3,43 @@ const router = express.Router();
 const pool = require("../config/db");
 const authenticateToken = require("../middleware/authMiddleware");
 
-// 1. Ambil semua transaksi user (endpoint /api/transactions/)
+// 1. Ambil semua transaksi user (Mendukung filter dinamis & opsi 'All')
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const result = await pool.query(
-      `SELECT t.*, c.name AS category, c.type 
-       FROM transactions t
-       JOIN categories c ON t.category_id = c.id
-       WHERE t.user_id = $1
-       ORDER BY t.transaction_date DESC`,
-      [userId],
-    );
+    const { month, year } = req.query;
+
+    let queryText = `
+      SELECT t.*, c.name AS category, c.type 
+      FROM transactions t
+      JOIN categories c ON t.category_id = c.id
+      WHERE t.user_id = $1
+    `;
+    
+    const queryParams = [userId];
+    let paramIndex = 2;
+
+    // Hanya tambahkan filter BULAN jika dikirim dan nilainya bukan 'All'
+    if (month && month !== 'All') {
+      queryText += ` AND EXTRACT(MONTH FROM t.transaction_date) = $${paramIndex}`;
+      queryParams.push(parseInt(month));
+      paramIndex++;
+    }
+
+    // Hanya tambahkan filter TAHUN jika dikirim dan nilainya bukan 'All'
+    if (year && year !== 'All') {
+      queryText += ` AND EXTRACT(YEAR FROM t.transaction_date) = $${paramIndex}`;
+      queryParams.push(parseInt(year));
+      paramIndex++;
+    }
+
+    queryText += ` ORDER BY t.transaction_date DESC`;
+
+    const result = await pool.query(queryText, queryParams);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).send(err.message);
+    console.error(err.message);
+    res.status(500).send("Gagal mengambil data transaksi");
   }
 });
 

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { LayoutDashboard, Plus, RefreshCw, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, Plus, ArrowRight } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
-import { Link } from 'react-router-dom'; // Pastikan sudah install react-router-dom
+import { Link } from 'react-router-dom';
 import TransactionModal from "../components/TransactionModal";
 import StatsGrid from "../components/StatsGrid";
 import TransactionTable from "../components/TransactionTable";
-import ProfileHeader from '../components/ProfileHeader';
+import ProfileHeader from '../components/ProfileHeader'; // 1. Tetap import ProfileHeader
 
 export default function Dashboard({ setIsSidebarOpen }) {
   const [transactions, setTransactions] = useState([]);
@@ -18,122 +18,170 @@ export default function Dashboard({ setIsSidebarOpen }) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(1);
+  const [transactionDate, setTransactionDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
 
+  // ==========================================
+  // State untuk Filter Global Dashboard (Default: 'All')
+  // ==========================================
+  const [filterMonth, setFilterMonth] = useState('All');
+  const [filterYear, setFilterYear] = useState('All');
+
+  const months = [
+    { val: 'All', name: 'All Months' }, // 2. Kembalikan pilihan All Months
+    { val: '01', name: 'Januari' }, { val: '02', name: 'Februari' },
+    { val: '03', name: 'Maret' }, { val: '04', name: 'April' },
+    { val: '05', name: 'Mei' }, { val: '06', name: 'Juni' },
+    { val: '07', name: 'Juli' }, { val: '08', name: 'Agustus' },
+    { val: '09', name: 'September' }, { val: '10', name: 'Oktober' },
+    { val: '11', name: 'November' }, { val: '12', name: 'Desember' }
+  ];
+
+  const years = ['All', '2024', '2025', '2026', '2027', '2028']; // Tambahkan 'All' untuk tahun
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   const fetchInitialData = async () => {
     const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
+    
     try {
       const [resTrans, resCats] = await Promise.all([
-        axios.get('http://localhost:5000/api/transactions', { headers }),
-        axios.get('http://localhost:5000/api/transactions/categories', { headers })
+        axios.get('http://localhost:5000/api/transactions', {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { month: filterMonth, year: filterYear }
+        }),
+        axios.get('http://localhost:5000/api/transactions/categories', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
       ]);
+
       setTransactions(resTrans.data);
       setCategories(resCats.data);
     } catch (err) {
-      console.error("Gagal mengambil data:", err);
+      console.error("Gagal memuat data dashboard:", err);
     }
   };
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [filterMonth, filterYear]);
 
-  const handleAddTransaction = (e) => {
+  const handleAddTransaction = async (e) => {
     e.preventDefault();
-    if (!description || !amount) return alert("Isi semua data dulu ya!");
     setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const selectedCategory = categories.find(cat => cat.id === Number(categoryId));
+      const isExpense = selectedCategory?.type === 'expense';
+      const numericAmount = parseFloat(amount);
+      const finalAmount = isExpense ? -Math.abs(numericAmount) : Math.abs(numericAmount);
 
-    const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
-    const categoryType = selectedCategory ? selectedCategory.type : 'income';
-    
-    let finalAmount = Math.abs(Number(amount));
-    if (categoryType === 'expense') finalAmount = -finalAmount;
+      await axios.post('http://localhost:5000/api/transactions', {
+        description,
+        amount: finalAmount,
+        category_id: categoryId,
+        transaction_date: transactionDate
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    const token = localStorage.getItem('token');
-
-    axios.post('http://localhost:5000/api/transactions', {
-      description,
-      amount: finalAmount,
-      category_id: parseInt(categoryId)
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(() => {
-      fetchInitialData(); 
-      setDescription('');   
+      setDescription('');
       setAmount('');
+      const today = new Date();
+      setTransactionDate(today.toISOString().split('T')[0]);
       setIsModalOpen(false);
-    })
-    .catch(err => alert("Gagal: " + err.message))
-    .finally(() => setIsLoading(false));
+      fetchInitialData();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menambahkan transaksi");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // --- LOGIKA RINGKASAN (Sama dengan Wallets.jsx) ---
-  const totalBalance = transactions.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  // Logika Kalkulasi Data Keuangan
+  const totalBalance = transactions.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
 
-  const chartData = transactions.length > 0 ? transactions.slice(-9).map(t => {
-    const amounts = transactions.map(tr => Number(tr.amount));
-    return (Math.abs(Number(t.amount)) / Math.max(...amounts, 1)) * 100;
-  }) : [];
+  const expenseTransactions = transactions.filter(t => parseFloat(t.amount) < 0);
+  const categoryTotals = expenseTransactions.reduce((acc, curr) => {
+    const catName = curr.category || 'Uncategorized';
+    acc[catName] = (acc[catName] || 0) + Math.abs(parseFloat(curr.amount));
+    return acc;
+  }, {});
 
-  const pieData = categories.map(cat => {
-    const total = transactions
-      .filter(t => t.category === cat.name)
-      .reduce((acc, curr) => acc + Math.abs(Number(curr.amount)), 0);
-    return { name: cat.name, value: total };
-  }).filter(data => data.value > 0);
+  const pieData = Object.keys(categoryTotals).map(key => ({
+    name: key,
+    value: categoryTotals[key]
+  }));
 
-  // HANYA TAMPILKAN 5 TRANSAKSI TERAKHIR UNTUK DASHBOARD
-  const recentTransactions = [...transactions]
-  .sort((a, b) => b.id - a.id)
-  .slice(0, 5);
+  // 3. KEMBALIKAN LOGIKA CHART TREN SESUAI ASLINYA (Memakai nilai asli nominal positif/negatif)
+  const chartData = transactions.slice(0, 7).map(t => parseFloat(t.amount));
+  const recentTransactions = transactions.slice(0, 5);
 
   return (
     <>
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-        <div className="flex items-center justify-between w-full md:w-auto">
+      <header className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* Hamburger Menu: Hanya muncul di Mobile/Tablet */}
             <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
+              onClick={() => setIsSidebarOpen(true)} 
+              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
             >
               <HiOutlineMenuAlt2 size={24} />
             </button>
-
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Dashboard</h1>
-              <p className="text-slate-500 text-xs hidden md:block">Monitor your daily financial activity</p>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                <LayoutDashboard size={24} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+                <p className="text-slate-400 text-xs font-medium">Overview of your financial health</p>
+              </div>
             </div>
           </div>
 
-          {/* ProfileHeader: Di Mobile akan pindah ke pojok kanan atas sejajar judul */}
-          <div className="md:hidden">
-            <ProfileHeader />
-          </div>
-        </div>
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            {/* UI Dropdown Filter Global */}
+            <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200/60 shadow-sm">
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="bg-transparent border-none text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer focus:ring-0"
+              >
+                {months.map(m => (
+                  <option key={m.val} value={m.val}>{m.name}</option>
+                ))}
+              </select>
+              
+              <div className="w-[1px] bg-slate-200 my-1 mx-1"></div>
 
-        <div className="flex items-center gap-3">
-          {/* Tombol Add Transaction: Lebar penuh di mobile, auto di desktop */}
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
-          >
-            <Plus size={20} />
-            <span>Add Transaction</span>
-          </button>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="bg-transparent border-none text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer focus:ring-0"
+              >
+                {years.map(y => (
+                  <option key={y} value={y}>{y === 'All' ? 'All Years' : y}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* ProfileHeader: Di Desktop muncul di sini (setelah tombol) */}
-          <div className="hidden md:flex items-center pl-4 border-l border-slate-200 ml-2">
-            <ProfileHeader />
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-indigo-100 active:scale-[0.98]"
+            >
+              <Plus size={16} /> <span className="hidden sm:inline">Add Transaction</span>
+            </button>
+
+            {/* 1. KEMBALIKAN ProfileHeader di Pojok Kanan Atas */}
+            <div className="border-l border-slate-200 pl-2">
+              <ProfileHeader />
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Grid Statistik Utama */}
       <StatsGrid 
         totalBalance={totalBalance} 
         pieData={pieData} 
@@ -141,7 +189,6 @@ export default function Dashboard({ setIsSidebarOpen }) {
         COLORS={COLORS} 
       />
 
-      {/* Bagian Transaksi Terakhir */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-slate-800">Recent Transactions</h2>
@@ -153,10 +200,9 @@ export default function Dashboard({ setIsSidebarOpen }) {
           </Link>
         </div>
         
-        {/* Menggunakan Table yang sama tapi dengan data terbatas */}
         <TransactionTable 
           transactions={recentTransactions}
-          hideFilter={true} // Kita akan tambahkan prop ini nanti di TransactionTable agar lebih bersih
+          hideFilter={true} 
         />
       </div>
 
@@ -172,6 +218,9 @@ export default function Dashboard({ setIsSidebarOpen }) {
         setAmount={setAmount}
         categoryId={categoryId}
         setCategoryId={setCategoryId}
+        transactionDate={transactionDate}
+        setTransactionDate={setTransactionDate}
+        title="Add Transaction"
       />
     </>
   );
