@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import TransactionModal from "../components/TransactionModal";
 import StatsGrid from "../components/StatsGrid";
 import TransactionTable from "../components/TransactionTable";
-import ProfileHeader from '../components/ProfileHeader'; // 1. Tetap import ProfileHeader
+import ProfileHeader from '../components/ProfileHeader';
 
 export default function Dashboard({ setIsSidebarOpen }) {
   const [transactions, setTransactions] = useState([]);
@@ -100,29 +100,40 @@ export default function Dashboard({ setIsSidebarOpen }) {
     }
   };
 
-  // Logika Kalkulasi Data Keuangan
+  // 1. state untuk switch mode expense dan income
+  const [chartMode, setChartMode] = useState('expense'); 
+
+  // 2. Logika Kalkulasi Total Saldo
   const totalBalance = transactions.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
 
-  const expenseTransactions = transactions.filter(t => parseFloat(t.amount) < 0);
-  const categoryTotals = expenseTransactions.reduce((acc, curr) => {
+  // 3. Filter transaksi berdasarkan mode aktif (expense / income)
+  const filteredPieTransactions = transactions.filter(t => {
+    const amt = parseFloat(t.amount);
+    return chartMode === 'expense' ? amt < 0 : amt > 0;
+  });
+
+  // 4. Akumulasikan total per kategori dari data yang sudah difilter
+  const categoryTotals = filteredPieTransactions.reduce((acc, curr) => {
     const catName = curr.category || 'Uncategorized';
     acc[catName] = (acc[catName] || 0) + Math.abs(parseFloat(curr.amount));
     return acc;
   }, {});
 
+  // 5. Format data untuk Recharts Pie
   const pieData = Object.keys(categoryTotals).map(key => ({
     name: key,
     value: categoryTotals[key]
   }));
 
-  // Membalikkan urutan (.reverse()) agar transaksi terlama di kiri dan terbaru di kanan grafik
+  // 6. Format data untuk AreaChart Tren (Membalikkan data dari terlama ke terbaru)
   const chartData = transactions
     .slice(0, 7)
     .map(t => ({
-      name: t.description.substring(0, 10), // Ambil 10 karakter pertama deskripsi sebagai label
-      amount: parseFloat(t.amount)          // Nominal asli (bisa positif/negatif)
+      name: t.description.substring(0, 10),
+      amount: parseFloat(t.amount)
     }))
     .reverse();
+
   const recentTransactions = transactions.slice(0, 5);
 
   return (
@@ -192,7 +203,9 @@ export default function Dashboard({ setIsSidebarOpen }) {
         totalBalance={totalBalance} 
         pieData={pieData} 
         chartData={chartData} 
-        COLORS={COLORS} 
+        COLORS={COLORS}
+        chartMode={chartMode}
+        setChartMode={setChartMode}
       />
 
       <div className="mt-8">
