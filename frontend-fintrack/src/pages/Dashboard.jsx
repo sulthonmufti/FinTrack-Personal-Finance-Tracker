@@ -115,8 +115,14 @@ export default function Dashboard({ setIsSidebarOpen }) {
     value: categoryTotals[key]
   }));
 
-  // 3. KEMBALIKAN LOGIKA CHART TREN SESUAI ASLINYA (Memakai nilai asli nominal positif/negatif)
-  const chartData = transactions.slice(0, 7).map(t => parseFloat(t.amount));
+  // Membalikkan urutan (.reverse()) agar transaksi terlama di kiri dan terbaru di kanan grafik
+  const chartData = transactions
+    .slice(0, 7)
+    .map(t => ({
+      name: t.description.substring(0, 10), // Ambil 10 karakter pertama deskripsi sebagai label
+      amount: parseFloat(t.amount)          // Nominal asli (bisa positif/negatif)
+    }))
+    .reverse();
   const recentTransactions = transactions.slice(0, 5);
 
   return (
