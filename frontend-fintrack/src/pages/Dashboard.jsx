@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { LayoutDashboard, Plus, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, Plus, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import { Link } from 'react-router-dom';
 import TransactionModal from "../components/TransactionModal";
@@ -100,6 +100,9 @@ export default function Dashboard({ setIsSidebarOpen }) {
     }
   };
 
+  //state hide saldo
+  const [showBalances, setShowBalances] = useState(true);
+
   // 1. state untuk switch mode expense dan income
   const [chartMode, setChartMode] = useState('expense'); 
 
@@ -151,9 +154,16 @@ export default function Dashboard({ setIsSidebarOpen }) {
               <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
                 <LayoutDashboard size={24} />
               </div>
-              <div>
+              <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-                <p className="text-slate-400 text-xs font-medium">Overview of your financial health</p>
+                {/* Tombol Toggle Hide/Show Nominal */}
+                <button 
+                  onClick={() => setShowBalances(!showBalances)} 
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all"
+                  title={showBalances ? "Sembunyikan Nominal" : "Tampilkan Nominal"}
+                >
+                  {showBalances ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
               </div>
             </div>
           </div>
@@ -206,6 +216,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
         COLORS={COLORS}
         chartMode={chartMode}
         setChartMode={setChartMode}
+        showBalances={showBalances}
       />
 
       <div className="mt-8">
@@ -222,6 +233,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
         <TransactionTable 
           transactions={recentTransactions}
           hideFilter={true} 
+          showBalances={showBalances}
         />
       </div>
 

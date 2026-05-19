@@ -1,12 +1,14 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area } from 'recharts';
 
-export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, chartMode, setChartMode }) {
+export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, chartMode, setChartMode, showBalances }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {/* Saldo Card */}
             <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
                 <p className="text-slate-400 text-[10px] font-bold tracking-widest mb-2 uppercase">Total Balance</p>
-                <h2 className="text-xl md:text-2xl font-bold text-indigo-600">Rp {totalBalance.toLocaleString('id-ID')}</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-indigo-600">
+                    {showBalances ? `Rp ${totalBalance.toLocaleString('id-ID')}` : 'Rp ••••••••'}
+                </h2>
             </div>
 
             {/* Pie Chart Card dengan Fitur Switch Mode */}
