@@ -101,7 +101,15 @@ export default function Dashboard({ setIsSidebarOpen }) {
   };
 
   //state hide saldo
-  const [showBalances, setShowBalances] = useState(true);
+  const [showBalances, setShowBalances] = useState(() => {
+    const saved = localStorage.getItem('showBalances');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  // Efek untuk menyimpan status mata setiap kali di-klik
+  useEffect(() => {
+    localStorage.setItem('showBalances', JSON.stringify(showBalances));
+  }, [showBalances]);
 
   // 1. state untuk switch mode expense dan income
   const [chartMode, setChartMode] = useState('expense'); 
@@ -157,13 +165,6 @@ export default function Dashboard({ setIsSidebarOpen }) {
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
                 {/* Tombol Toggle Hide/Show Nominal */}
-                <button 
-                  onClick={() => setShowBalances(!showBalances)} 
-                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all"
-                  title={showBalances ? "Sembunyikan Nominal" : "Tampilkan Nominal"}
-                >
-                  {showBalances ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
               </div>
             </div>
           </div>
@@ -217,6 +218,15 @@ export default function Dashboard({ setIsSidebarOpen }) {
         chartMode={chartMode}
         setChartMode={setChartMode}
         showBalances={showBalances}
+        toggleBalanceButton={
+          <button
+            onClick={() => setShowBalances(!showBalances)}
+            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-all active:scale-95"
+            title={showBalances ? "Hide Balances" : "Show Balances"}
+          >
+            {showBalances ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        }
       />
 
       <div className="mt-8">
