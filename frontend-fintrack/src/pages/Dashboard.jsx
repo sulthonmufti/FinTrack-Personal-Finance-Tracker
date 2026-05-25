@@ -23,9 +23,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
     return today.toISOString().split('T')[0];
   });
 
-  // ==========================================
   // State untuk Filter Global Dashboard (Default: 'All')
-  // ==========================================
   const [filterMonth, setFilterMonth] = useState('All');
   const [filterYear, setFilterYear] = useState('All');
 
@@ -147,6 +145,51 @@ export default function Dashboard({ setIsSidebarOpen }) {
 
   const recentTransactions = transactions.slice(0, 5);
 
+  //hitung presentase perbandingan bulan lalu
+  const calculateBalanceComparison = () => {
+    const today = new Date();
+    const currentMonth = (typeof filterMonth !== 'undefined' && filterMonth !== 'All') ? parseInt(filterMonth) - 1 : today.getMonth();
+    const currentYear = (typeof filterYear !== 'undefined' && filterYear !== 'All') ? parseInt(filterYear) : today.getFullYear();
+    let prevMonth = currentMonth - 1;
+    let prevYear = currentYear;
+    if (prevMonth < 0) {
+      prevMonth = 11;
+      prevYear -= 1;
+    }
+
+    let currentMonthTotal = 0;
+    let prevMonthTotal = 0;
+
+    transactions.forEach(t => {
+      const tDate = new Date(t.transaction_date);
+      const tMonth = tDate.getMonth();
+      const tYear = tDate.getFullYear();
+      const tAmount = parseFloat(t.amount);
+
+      if (tMonth === currentMonth && tYear === currentYear) {
+        currentMonthTotal += tAmount;
+      }
+      if (tMonth === prevMonth && tYear === prevYear) {
+        prevMonthTotal += tAmount;
+      }
+    });
+
+    if (prevMonthTotal === 0) {
+      return { percentage: currentMonthTotal > 0 ? 100 : 0, isIncrease: true, hasPrevData: false };
+    }
+
+    const difference = currentMonthTotal - prevMonthTotal;
+    const percentage = (difference / Math.abs(prevMonthTotal)) * 100;
+
+    return {
+      percentage: Math.abs(Math.round(percentage)),
+      isIncrease: difference >= 0,
+      hasPrevData: true
+    };
+  };
+
+  const comparisonData = calculateBalanceComparison();
+
   return (
     <>
       <header className="mb-8">
@@ -227,6 +270,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
             {showBalances ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         }
+        comparisonData={comparisonData}
       />
 
       <div className="mt-8">

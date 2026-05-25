@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area } from 'recharts';
 
-export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, chartMode, setChartMode, showBalances, toggleBalanceButton }) {
+export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, chartMode, setChartMode, showBalances, toggleBalanceButton, comparisonData }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center relative min-h-[140px]"> 
@@ -14,6 +14,20 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
                 <h2 className="text-lg md:text-xl font-bold text-indigo-600 w-full break-all tracking-tight">
                     {showBalances ? `Rp ${totalBalance.toLocaleString('id-ID')}` : 'Rp ••••••••'}
                 </h2>
+                {comparisonData && (
+                    <div className="mt-2 flex items-center gap-1.5 text-xs">
+                        <span className={`font-bold px-1.5 py-0.5 rounded-md ${
+                            comparisonData.isIncrease 
+                                ? 'bg-emerald-50 text-emerald-600' 
+                                : 'bg-rose-50 text-rose-600'
+                        }`}>
+                            {comparisonData.isIncrease ? '↑' : '↓'} {comparisonData.percentage}%
+                        </span>
+                        {/* <span className="text-slate-400 text-[11px]">
+                            dari bulan lalu
+                        </span> */}
+                    </div>
+                )}
             </div>
 
             {/* Pie Chart Card dengan Fitur Switch Mode */}
