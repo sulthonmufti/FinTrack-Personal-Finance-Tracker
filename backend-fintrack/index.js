@@ -9,10 +9,12 @@ app.use(express.json());
 // Import Routes
 const authRoutes = require("./routes/authRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
+const walletRoutes = require("./routes/walletRoutes");
 
 // Gunakan Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/wallets", walletRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

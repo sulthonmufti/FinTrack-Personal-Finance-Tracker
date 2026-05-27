@@ -40,22 +40,29 @@ export default function Dashboard({ setIsSidebarOpen }) {
   const years = ['All', '2024', '2025', '2026', '2027', '2028']; // Tambahkan 'All' untuk tahun
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
+  const [wallets, setWallets] = useState([]);
+  const [walletId, setWalletId] = useState('');
+
   const fetchInitialData = async () => {
     const token = localStorage.getItem('token');
     
     try {
-      const [resTrans, resCats] = await Promise.all([
+      const [resTrans, resCats, resWallets] = await Promise.all([
         axios.get('http://localhost:5000/api/transactions', {
           headers: { Authorization: `Bearer ${token}` },
           params: { month: filterMonth, year: filterYear }
         }),
         axios.get('http://localhost:5000/api/transactions/categories', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get('http://localhost:5000/api/wallets', {
+          headers: { Authorization: `Bearer ${token}` },
         })
       ]);
 
       setTransactions(resTrans.data);
       setCategories(resCats.data);
+      setWallets(resWallets.data);
     } catch (err) {
       console.error("Gagal memuat data dashboard:", err);
     }
@@ -70,29 +77,25 @@ export default function Dashboard({ setIsSidebarOpen }) {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const selectedCategory = categories.find(cat => cat.id === Number(categoryId));
-      const isExpense = selectedCategory?.type === 'expense';
-      const numericAmount = parseFloat(amount);
-      const finalAmount = isExpense ? -Math.abs(numericAmount) : Math.abs(numericAmount);
-
+      
       await axios.post('http://localhost:5000/api/transactions', {
+        amount: parseInt(amount),
         description,
-        amount: finalAmount,
-        category_id: categoryId,
+        category_id: parseInt(categoryId),
+        wallet_id: walletId ? parseInt(walletId) : null,
         transaction_date: transactionDate
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      setIsModalOpen(false);
       setDescription('');
       setAmount('');
-      const today = new Date();
-      setTransactionDate(today.toISOString().split('T')[0]);
-      setIsModalOpen(false);
+      setWalletId('');
       fetchInitialData();
     } catch (err) {
       console.error(err);
-      alert("Gagal menambahkan transaksi");
+      alert("Gagal menambahkan transaksi. Periksa koneksi backend atau format data.");
     } finally {
       setIsLoading(false);
     }
@@ -295,6 +298,9 @@ export default function Dashboard({ setIsSidebarOpen }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         categories={categories}
+        wallets={wallets}
+        walletId={walletId}
+        setWalletId={setWalletId}
         onSubmit={handleAddTransaction}
         isLoading={isLoading}
         description={description}

@@ -15,19 +15,19 @@ router.get("/", authenticateToken, async (req, res) => {
       JOIN categories c ON t.category_id = c.id
       WHERE t.user_id = $1
     `;
-    
+
     const queryParams = [userId];
     let paramIndex = 2;
 
     // Hanya tambahkan filter BULAN jika dikirim dan nilainya bukan 'All'
-    if (month && month !== 'All') {
+    if (month && month !== "All") {
       queryText += ` AND EXTRACT(MONTH FROM t.transaction_date) = $${paramIndex}`;
       queryParams.push(parseInt(month));
       paramIndex++;
     }
 
     // Hanya tambahkan filter TAHUN jika dikirim dan nilainya bukan 'All'
-    if (year && year !== 'All') {
+    if (year && year !== "All") {
       queryText += ` AND EXTRACT(YEAR FROM t.transaction_date) = $${paramIndex}`;
       queryParams.push(parseInt(year));
       paramIndex++;
@@ -60,11 +60,12 @@ router.get("/categories", authenticateToken, async (req, res) => {
 // 3. Tambah transaksi baru (endpoint /api/transactions/)
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    const { amount, description, category_id, transaction_date } = req.body; 
+    const { amount, description, category_id, wallet_id, transaction_date } =
+      req.body;
     const userId = req.user.id;
     const newTransaction = await pool.query(
-      "INSERT INTO transactions (amount, description, category_id, user_id, transaction_date) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [amount, description, category_id, userId, transaction_date],
+      "INSERT INTO transactions (amount, description, category_id, wallet_id, user_id, transaction_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [amount, description, category_id, wallet_id, userId, transaction_date],
     );
     res.json(newTransaction.rows[0]);
   } catch (err) {
@@ -118,12 +119,12 @@ router.post("/categories", authenticateToken, async (req, res) => {
 router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { amount, description, category_id } = req.body;
+    const { amount, description, category_id, wallet_id } = req.body;
     const userId = req.user.id;
 
     const result = await pool.query(
-      "UPDATE transactions SET amount = $1, description = $2, category_id = $3 WHERE id = $4 AND user_id = $5 RETURNING *",
-      [amount, description, category_id, id, userId],
+      "UPDATE transactions SET amount = $1, description = $2, category_id = $3, wallet_id = $4 WHERE id = $5 AND user_id = $6 RETURNING *",
+      [amount, description, category_id, wallet_id, id, userId],
     );
 
     if (result.rowCount === 0) {

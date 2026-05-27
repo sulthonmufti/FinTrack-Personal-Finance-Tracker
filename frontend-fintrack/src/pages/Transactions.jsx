@@ -70,7 +70,25 @@ export default function Transactions({ setIsSidebarOpen }) {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const [wallets, setWallets] = useState([]);
+  const [walletId, setWalletId] = useState('');
+
+  const fetchWallets = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('http://localhost:5000/api/wallets', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setWallets(res.data);
+    } catch (err) {
+      console.error("Gagal mengambil data dompet untuk modal:", err);
+    }
+  };
+
+  useEffect(() => { 
+    fetchData(); 
+    fetchWallets();
+  }, []);
 
   const filteredData = transactions.filter(item => {
     const date = new Date(item.transaction_date);
@@ -117,6 +135,7 @@ export default function Transactions({ setIsSidebarOpen }) {
     setDescription(transaction.description);
     setAmount(Math.abs(transaction.amount)); // Simpan sebagai angka positif di input
     setCategoryId(transaction.category_id); // Gunakan ID kategori dari database
+    setWalletId(transaction.wallet_id || '');
 
     // Format tanggal dari database (ISO String / Timestamp) menjadi YYYY-MM-DD
     const formattedDate = transaction.transaction_date ? transaction.transaction_date.split('T')[0] : getTodayDateString();
@@ -139,10 +158,11 @@ export default function Transactions({ setIsSidebarOpen }) {
     const numericAmount = parseFloat(amount);
     const finalAmount = isExpense ? -Math.abs(numericAmount) : Math.abs(numericAmount);
     
-    const payload = { 
-      description, 
-      amount: finalAmount, 
-      category_id: categoryId,
+    const payload = {
+      amount: parseInt(amount),
+      description,
+      category_id: parseInt(categoryId),
+      wallet_id: walletId ? parseInt(walletId) : null,
       transaction_date: transactionDate
     };
 
@@ -176,8 +196,9 @@ export default function Transactions({ setIsSidebarOpen }) {
     setDescription('');
     setAmount('');
     setCategoryId(categories.length > 0 ? categories[0].id : 1);
+    setWalletId('');
     setTransactionDate(getTodayDateString());
-};
+  };
 
   return (
     <>
@@ -277,9 +298,12 @@ export default function Transactions({ setIsSidebarOpen }) {
       {/* MODALS */}
       <TransactionModal 
         isOpen={isAddModalOpen}
-        onClose={closeModal} // Gunakan fungsi closeModal yang baru
+        onClose={closeModal}
         categories={categories}
-        onSubmit={handleFormSubmit} // Gunakan fungsi handleFormSubmit yang baru
+        wallets={wallets}
+        walletId={walletId}
+        setWalletId={setWalletId}
+        onSubmit={handleFormSubmit}
         isLoading={isLoading}
         description={description}
         setDescription={setDescription}
