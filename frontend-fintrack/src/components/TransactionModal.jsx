@@ -19,30 +19,38 @@ export default function TransactionModal({
   setCategoryId,
   transactionDate,
   setTransactionDate,
-  title
+  title,
+  activeTab: activeTabProp,
+  setActiveTab: setActiveTabProp
 }) {
-  // State untuk melacak tab aktif ('expense' atau 'income')
-  const [activeTab, setActiveTab] = useState('expense');
-
+  // Gunakan state lokal sebagai fallback jika props tidak dikirim (misal dari Dashboard)
+  const [localActiveTab, setLocalActiveTab] = useState('expense');
+  const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
+  const setActiveTab = typeof setActiveTabProp === 'function' ? setActiveTabProp : setLocalActiveTab;
   // Filter kategori berdasarkan tab yang aktif
   const filteredCategories = categories.filter(cat => cat.type === activeTab);
 
-  // Efek untuk otomatis memilih kategori pertama saat tab berpindah atau modal dibuka
+  // Memastikan kategori yang terpilih selalu valid di dalam tab yang aktif
   useEffect(() => {
     if (isOpen && filteredCategories.length > 0) {
-      // Cek apakah categoryId yang sekarang ada di dalam daftar kategori yang sudah difilter
       const isIdValidInTab = filteredCategories.some(cat => cat.id === Number(categoryId));
       
-      // Jika tidak valid (atau baru ganti tab), set ke kategori pertama dari tab aktif tersebut
+      // Jika kategori saat ini tidak ada di tab aktif, set ke data pertama di tab tersebut
       if (!isIdValidInTab) {
         setCategoryId(filteredCategories[0].id);
       }
     }
-    // logic untuk otomatis memilih wallet pertama saat modal dibuka
-    if (isOpen && wallets.length > 0 && !walletId) {
-      setWalletId(wallets[0].id);
+  }, [activeTab, isOpen]); // Pantau perubahan tab atau pembukaan modal
+
+  // Otomatis memilih wallet pertama saat modal dibuka
+  useEffect(() => {
+    if (isOpen && wallets && wallets.length > 0 && !walletId) {
+      // Pastikan fungsi setWalletId benar-benar dikirim sebagai props sebelum dipanggil
+      if (typeof setWalletId === 'function') {
+        setWalletId(wallets[0].id);
+      }
     }
-  }, [activeTab, isOpen, categories, wallets]);
+  }, [isOpen, wallets, walletId, setWalletId]);
 
   if (!isOpen) return null;
 

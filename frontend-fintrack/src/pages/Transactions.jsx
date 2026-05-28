@@ -125,6 +125,9 @@ export default function Transactions({ setIsSidebarOpen }) {
   // 3. Potong data untuk ditampilkan di tabel
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
+  // State tab aktif untuk modal (expense/income)
+  const [activeTab, setActiveTab] = useState('expense');
+
   // State Edit
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -132,10 +135,14 @@ export default function Transactions({ setIsSidebarOpen }) {
   const handleEditClick = (transaction) => {
     setIsEditMode(true);
     setEditingId(transaction.id);
+    setSelectedTransaction(transaction);
     setDescription(transaction.description);
     setAmount(Math.abs(transaction.amount)); // Simpan sebagai angka positif di input
     setCategoryId(transaction.category_id); // Gunakan ID kategori dari database
     setWalletId(transaction.wallet_id || '');
+
+    // Tentukan tab berdasarkan nilai amount: negatif = expense, positif = income
+    setActiveTab(transaction.amount < 0 ? 'expense' : 'income');
 
     // Format tanggal dari database (ISO String / Timestamp) menjadi YYYY-MM-DD
     const formattedDate = transaction.transaction_date ? transaction.transaction_date.split('T')[0] : getTodayDateString();
@@ -146,44 +153,44 @@ export default function Transactions({ setIsSidebarOpen }) {
   
   //fungsi untuk menambahkan dan mengedit transaksi
   const handleFormSubmit = async (e) => {
-    if (e) e.preventDefault();
+    e.preventDefault();
     setIsLoading(true);
-    const token = localStorage.getItem('token');
-
-    // Temukan kategori yang dipilih untuk mengecek tipenya
-    const selectedCategory = categories.find(cat => cat.id === Number(categoryId));
-    const isExpense = selectedCategory?.type === 'expense';
-
-    // Pastikan amount bernilai negatif jika tipenya expense, dan positif jika income
-    const numericAmount = parseFloat(amount);
-    const finalAmount = isExpense ? -Math.abs(numericAmount) : Math.abs(numericAmount);
-    
-    const payload = {
-      amount: parseInt(amount),
-      description,
-      category_id: parseInt(categoryId),
-      wallet_id: walletId ? parseInt(walletId) : null,
-      transaction_date: transactionDate
-    };
 
     try {
+      const token = localStorage.getItem('token');
+      const data = {
+        amount: activeTab === 'expense' ? -Math.abs(parseInt(amount)) : Math.abs(parseInt(amount)),
+        description,
+        category_id: parseInt(categoryId),
+        wallet_id: parseInt(walletId) // Pastikan dikirim sesuai kebutuhan backend
+      };
+
       if (isEditMode) {
-        // MODE EDIT
-        await axios.put(`http://localhost:5000/api/transactions/${editingId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // PASTIKAN selectedTransaction tidak null sebelum membaca .id
+        if (!selectedTransaction || !selectedTransaction.id) {
+          throw new Error("ID Transaksi yang akan diedit tidak ditemukan.");
+        }
+
+        await axios.put(
+          `http://localhost:5000/api/transactions/${selectedTransaction.id}`, 
+          data, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       } else {
-        // MODE TAMBAH
-        await axios.post('http://localhost:5000/api/transactions', payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // Mode Tambah Transaksi Baru
+        await axios.post(
+          'http://localhost:5000/api/transactions', 
+          data, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       }
 
-      fetchData(); // Refresh tabel
-      closeModal(); // Tutup dan reset
+      fetchData(); // Refresh data tabel
+      closeModal(); // Tutup modal dan reset form
     } catch (err) {
-      console.error("Gagal menyimpan:", err);
-      alert("Gagal menyimpan transaksi");
+      // Menampilkan detail error asli di console untuk mempermudah debugging
+      console.error("Detail Error Sistem:", err.message || err);
+      alert("Gagal memproses transaksi. Silakan periksa kembali data Anda.");
     } finally {
       setIsLoading(false);
     }
@@ -198,6 +205,7 @@ export default function Transactions({ setIsSidebarOpen }) {
     setCategoryId(categories.length > 0 ? categories[0].id : 1);
     setWalletId('');
     setTransactionDate(getTodayDateString());
+    setActiveTab('expense');
   };
 
   return (
@@ -314,6 +322,8 @@ export default function Transactions({ setIsSidebarOpen }) {
         transactionDate={transactionDate}
         setTransactionDate={setTransactionDate}
         title={isEditMode ? "Edit Transaction" : "Add Transaction"} // Judul dinamis
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
 
       <DeleteConfirmModal 

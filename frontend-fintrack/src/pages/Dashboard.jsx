@@ -77,25 +77,30 @@ export default function Dashboard({ setIsSidebarOpen }) {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+      const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
+      // Jika kategori bertipe 'expense', kalikan dengan -1 agar menjadi negatif
+      const isExpense = selectedCategory?.type === 'expense';
+      const finalAmount = isExpense ? parseInt(amount) * -1 : parseInt(amount);
+
       await axios.post('http://localhost:5000/api/transactions', {
-        amount: parseInt(amount),
+        amount: finalAmount,
         description,
         category_id: parseInt(categoryId),
-        wallet_id: walletId ? parseInt(walletId) : null,
+        wallet_id: walletId && walletId !== '' ? Number(walletId) : null,
         transaction_date: transactionDate
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      // Reset Form & Tutup Modal
       setIsModalOpen(false);
       setDescription('');
       setAmount('');
-      setWalletId('');
+      setWalletId(''); 
       fetchInitialData();
     } catch (err) {
       console.error(err);
-      alert("Gagal menambahkan transaksi. Periksa koneksi backend atau format data.");
+      alert("Gagal menambahkan transaksi.");
     } finally {
       setIsLoading(false);
     }
