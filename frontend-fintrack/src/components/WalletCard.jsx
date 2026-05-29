@@ -1,14 +1,17 @@
 import { CreditCard, Trash2, Edit2 } from 'lucide-react';
+import { WALLET_THEMES } from './WalletModal';
 
 export default function WalletCard({ wallet, onSelect, isActive, onEdit, onDelete }) {
+
+    const cardBgClass = WALLET_THEMES[wallet.color] || wallet.color || 'bg-indigo-600';
+
     return (
         <div 
             onClick={() => onSelect(wallet)}
-            className={`p-6 rounded-[2rem] text-white shadow-lg transition-all transform cursor-pointer relative overflow-hidden group ${wallet.color} ${
+            className={`p-6 rounded-[2rem] text-white shadow-lg transition-all transform cursor-pointer relative overflow-hidden group ${cardBgClass} ${
                 isActive ? 'ring-4 ring-indigo-500/30 scale-[1.02]' : 'hover:scale-[1.01]'
             }`}
         >
-            {/* Dekorasi Latar Belakang Lingkaran */}
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-xl group-hover:bg-white/15 transition-all"></div>
             
             <div className="flex justify-between items-start relative z-10">
@@ -29,7 +32,7 @@ export default function WalletCard({ wallet, onSelect, isActive, onEdit, onDelet
                     </p>
                 </div>
                 
-                {/* Tombol Aksi kecil */}
+                {/* action button */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
                         onClick={(e) => { e.stopPropagation(); onEdit(wallet); }} 

@@ -1,31 +1,41 @@
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+export const WALLET_THEMES = {
+    indigo: 'bg-indigo-600',
+    slate: 'bg-slate-800',
+    emerald: 'bg-emerald-600',
+    purple: 'bg-gradient-to-br from-purple-600 to-indigo-700',
+    sunset: 'bg-gradient-to-br from-rose-500 to-orange-500'
+};
+
 const AVAILABLE_COLORS = [
-    { bg: 'bg-indigo-600', name: 'Indigo' },
-    { bg: 'bg-slate-800', name: 'Dark Slate' },
-    { bg: 'bg-emerald-600', name: 'Emerald' },
-    { bg: 'bg-gradient-to-br from-purple-600 to-indigo-700', name: 'Purple Gradient' },
-    { bg: 'bg-gradient-to-br from-rose-500 to-orange-500', name: 'Warm Sunset' }
+    { id: 'indigo', name: 'Indigo' },
+    { id: 'slate', name: 'Dark Slate' },
+    { id: 'emerald', name: 'Emerald' },
+    { id: 'purple', name: 'Purple Gradient' },
+    { id: 'sunset', name: 'Warm Sunset' }
 ];
 
 export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
     const [name, setName] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [balance, setBalance] = useState('');
-    const [color, setColor] = useState('bg-indigo-600');
+    const [color, setColor] = useState('indigo');
 
     useEffect(() => {
         if (editData) {
             setName(editData.name);
             setAccountNumber(editData.account_number || '');
             setBalance(editData.balance);
-            setColor(editData.color);
+            // Cek jika data lama berupa class, convert ke ID atau biarkan jika sudah ID
+            const themeId = Object.keys(WALLET_THEMES).find(key => WALLET_THEMES[key] === editData.color) || editData.color;
+            setColor(themeId || 'indigo');
         } else {
             setName('');
             setAccountNumber('');
             setBalance('');
-            setColor('bg-indigo-600');
+            setColor('indigo');
         }
     }, [editData, isOpen]);
 
@@ -67,13 +77,13 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
                     )}
 
                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Card Theme Theme</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Card Theme</label>
                         <div className="flex gap-2 flex-wrap">
                             {AVAILABLE_COLORS.map((col) => (
                                 <button
-                                    key={col.bg} type="button" onClick={() => setColor(col.bg)}
-                                    className={`w-10 h-10 rounded-xl transition-all ${col.bg} ${
-                                        color === col.bg ? 'ring-4 ring-indigo-500/40 scale-110' : 'opacity-80 hover:opacity-100'
+                                    key={col.id} type="button" onClick={() => setColor(col.id)}
+                                    className={`w-10 h-10 rounded-xl transition-all ${WALLET_THEMES[col.id]} ${
+                                        color === col.id ? 'ring-4 ring-indigo-500/40 scale-110' : 'opacity-80 hover:opacity-100'
                                     }`}
                                     title={col.name}
                                 />

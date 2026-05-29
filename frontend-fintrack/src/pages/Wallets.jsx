@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Wallet, Menu } from 'lucide-react';
+import { Plus, Wallet } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import ProfileHeader from '../components/ProfileHeader';
 import WalletCard from '../components/WalletCard';
@@ -18,9 +18,14 @@ export default function Wallets({ setIsSidebarOpen }) {
             const res = await axios.get('http://localhost:5000/api/wallets', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setWallets(res.rows || res.data);
-            if (res.data.length > 0 && !selectedWallet) {
-                setSelectedWallet(res.data[0]); // auto select dompet pertama
+            
+            // Mengantisipasi format array langsung atau objek { rows: [...] } dari pg
+            const walletData = res.data.rows || res.data || [];
+            
+            setWallets(walletData);
+            
+            if (walletData.length > 0 && !selectedWallet) {
+                setSelectedWallet(walletData[0]); // auto select dompet pertama
             }
         } catch (err) {
             console.error("Gagal sinkronisasi data dompet:", err);
@@ -67,6 +72,12 @@ export default function Wallets({ setIsSidebarOpen }) {
                 await axios.delete(`http://localhost:5000/api/wallets/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                
+                // Jika dompet yang dihapus kebetulan sedang dipilih, reset selectedWallet
+                if (selectedWallet?.id === id) {
+                    setSelectedWallet(null);
+                }
+                
                 fetchWallets();
             } catch (err) {
                 console.error("Gagal menghapus dompet:", err);
@@ -74,8 +85,8 @@ export default function Wallets({ setIsSidebarOpen }) {
         }
     };
 
-    // Hitung Akumulasi Total Saldo semua dompet
-    const totalAccumulatedBalance = wallets.reduce((acc, curr) => acc + parseFloat(curr.balance), 0);
+    // Hitung Akumulasi Total Saldo semua dompet (Aman dari NaN)
+    const totalAccumulatedBalance = wallets.reduce((acc, curr) => acc + (parseFloat(curr.balance) || 0), 0);
 
     return (
         <>
