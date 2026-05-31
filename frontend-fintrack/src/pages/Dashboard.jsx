@@ -150,8 +150,23 @@ export default function Dashboard({ setIsSidebarOpen }) {
       amount: parseFloat(t.amount)
     }))
     .reverse();
+  
+  // Urutkan seluruh transaksi berdasarkan tanggal dan ID
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const dateA = new Date(a.transaction_date);
+    const dateB = new Date(b.transaction_date);
+    
+    // Jika tanggal berbeda, urutkan berdasarkan tanggal terbaru
+    if (dateB - dateA !== 0) {
+      return dateB - dateA;
+    }
+    
+    // Jika tanggal sama, urutkan berdasarkan ID terbesar/terbaru
+    return b.id - a.id; 
+  });
 
-  const recentTransactions = transactions.slice(0, 5);
+  // Ambil 5 transaksi terbaru dari hasil urutan
+const recentTransactions = sortedTransactions.slice(0, 5);
 
   //hitung presentase perbandingan bulan lalu
   const calculateBalanceComparison = () => {
