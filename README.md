@@ -10,20 +10,22 @@
   <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens" alt="JWT" />
 </div>
 
-FinTrack is a full-stack personal finance tracking application designed to help users manage daily transactions and expense categories efficiently. The project is built with a modern architecture using Node.js on the Backend and React (Vite) on the Frontend, featuring JWT-based authentication and a modular MVC-ish folder structure.
+FinTrack is a full-stack personal finance tracking application designed to help users manage daily transactions, digital wallets, and expense categories efficiently. The project is built with a modern architecture using Node.js on the Backend and React (Vite) on the Frontend, featuring JWT-based authentication, wallet balance synchronization, and a modular MVC-ish folder structure.
 
 ---
 
 ## Key Features
 
-- **User Authentication:** Register, Login, and Logout with JWT-based session management.
-- **Account Settings:** Edit profile information (username & email) and change password with a tabbed UI.
-- **Transaction Management:** Record and view financial transaction history per user.
-- **Categorization:** Group transactions by categories (e.g., Food, Transport, Entertainment).
-- **Interactive Dashboard:** Visualize data with dynamic charts using Recharts.
-- **Multi-page Navigation:** Smooth routing with protected routes via React Router DOM.
-- **Relational Database:** Structured data storage using PostgreSQL with user-scoped data.
-- **RESTful API:** Modular route-based API architecture with middleware authentication.
+- **User Authentication:** Register (with auto-login & default categories), Login, and Logout with JWT-based session management (24h expiry).
+- **Wallet Management:** Full CRUD for digital wallets — add wallets with initial balance (auto-creates income transaction), edit details (name, account number, card theme), and delete with confirmation.
+- **Transaction Management:** Full CRUD — add, edit, and delete financial transactions with automatic wallet balance synchronization using PostgreSQL database transactions (`BEGIN`/`COMMIT`/`ROLLBACK`).
+- **Categorization:** User-scoped categories (income & expense types) with custom category creation via Settings page. Default categories ("Gaji", "Makanan") are auto-generated on registration.
+- **Interactive Dashboard:** Visualize data with dynamic Pie Charts (switchable expense/income mode), Area Charts for trends, financial statistics cards, month-over-month comparison percentages, and a hide/show balance toggle.
+- **Advanced Filtering:** Global month & year filter on Dashboard, and search + category + month + year filters with pagination (10 items/page) on Transactions page.
+- **Settings Hub:** Tabbed interface for Profile editing, Password change (with old password verification), and Category management (add new categories with type selection).
+- **Multi-page Navigation:** Smooth routing with protected routes via React Router DOM, responsive sidebar with mobile hamburger menu support.
+- **Relational Database:** Structured data storage using PostgreSQL with user-scoped data and foreign key relationships.
+- **RESTful API:** Modular route-based API architecture with middleware authentication and database transaction protection for data integrity.
 
 ---
 
@@ -31,14 +33,14 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 
 | Category       | Technology                                |
 | :------------- | :---------------------------------------- |
-| Frontend       | React.js (Vite), Tailwind CSS 4.0        |
-| Navigation     | React Router DOM                          |
-| Charts         | Recharts                                  |
-| Icons          | Lucide React                              |
+| Frontend       | React.js 19 (Vite 8), Tailwind CSS 4.0   |
+| Navigation     | React Router DOM 7                        |
+| Charts         | Recharts 3                                |
+| Icons          | Lucide React, React Icons (HiOutline)     |
 | HTTP Client    | Axios                                     |
-| Backend        | Node.js, Express.js                       |
+| Backend        | Node.js, Express.js 5                     |
 | Authentication | JSON Web Token (JWT), Bcrypt              |
-| Database       | PostgreSQL                                |
+| Database       | PostgreSQL (pg 8)                         |
 | Environment    | Dotenv, CORS                              |
 | API Testing    | Postman / Insomnia                        |
 
@@ -55,7 +57,8 @@ FinTrack/
 │   │   └── authMiddleware.js   # JWT token verification middleware
 │   ├── routes/
 │   │   ├── authRoutes.js       # Auth endpoints (register, login, update-profile, change-password)
-│   │   └── transactionRoutes.js # Transaction & category CRUD endpoints
+│   │   ├── transactionRoutes.js # Transaction & category CRUD endpoints (with wallet sync)
+│   │   └── walletRoutes.js     # Wallet CRUD endpoints (with initial balance transaction)
 │   ├── .env                    # Environment variables (Hidden/Ignored)
 │   ├── index.js                # Main entry point & route mounting
 │   └── package.json            # Backend dependencies
@@ -65,16 +68,22 @@ FinTrack/
 │   ├── src/
 │   │   ├── assets/             # Images & SVG assets (hero.png, etc.)
 │   │   ├── components/         # Reusable UI components
-│   │   │   ├── ProfileHeader.jsx     # User profile display in header
-│   │   │   ├── Sidebar.jsx           # Navigation sidebar
-│   │   │   ├── StatsGrid.jsx         # Financial statistics cards
-│   │   │   ├── TransactionModal.jsx  # Add transaction modal form
-│   │   │   └── TransactionTable.jsx  # Transaction list table
+│   │   │   ├── DeleteConfirmModal.jsx  # Delete confirmation dialog with warning UI
+│   │   │   ├── ProfileHeader.jsx       # User profile display in header
+│   │   │   ├── Sidebar.jsx             # Navigation sidebar (Dashboard, Wallets, Transactions, Reports, Settings)
+│   │   │   ├── StatsGrid.jsx           # Financial statistics cards & chart widgets
+│   │   │   ├── TransactionModal.jsx    # Add/edit transaction modal form (with wallet & category selection)
+│   │   │   ├── TransactionTable.jsx    # Transaction list table with pagination
+│   │   │   ├── WalletCard.jsx          # Individual wallet card component (with theme colors)
+│   │   │   └── WalletModal.jsx         # Add/edit wallet modal form (with card theme picker)
 │   │   ├── pages/              # Page-level components (routed views)
-│   │   │   ├── Dashboard.jsx         # Main dashboard with charts
-│   │   │   ├── EditProfile.jsx       # Account settings (profile info & password)
-│   │   │   ├── Login.jsx             # Login & registration page
-│   │   │   └── Wallets.jsx           # Transaction management page
+│   │   │   ├── Dashboard.jsx         # Main dashboard with charts, stats & global date filter
+│   │   │   ├── EditProfile.jsx       # Legacy profile edit page
+│   │   │   ├── Login.jsx             # Login page
+│   │   │   ├── Register.jsx          # Registration page with success modal & auto-login
+│   │   │   ├── Settings.jsx          # Settings hub (Profile, Security, Categories tabs)
+│   │   │   ├── Transactions.jsx      # Full transaction management with search, filter & pagination
+│   │   │   └── Wallets.jsx           # Wallet management page with card grid layout
 │   │   ├── utils/
 │   │   │   └── formatters.js         # Currency & date formatting helpers
 │   │   ├── App.jsx             # Root component with routing & auth guard
@@ -95,26 +104,38 @@ FinTrack/
 
 ### Authentication (`/api/auth`)
 
-| Method | Endpoint              | Auth | Description                    |
-| :----- | :-------------------- | :--- | :----------------------------- |
-| POST   | `/api/auth/register`  | No   | Register a new user            |
-| POST   | `/api/auth/login`     | No   | Login and receive JWT token    |
-| PUT    | `/api/auth/update-profile` | Yes | Update username and email |
-| PUT    | `/api/auth/change-password` | Yes | Change user password      |
+| Method | Endpoint                      | Auth | Description                                    |
+| :----- | :---------------------------- | :--- | :--------------------------------------------- |
+| POST   | `/api/auth/register`          | No   | Register new user (auto-creates default categories & returns JWT) |
+| POST   | `/api/auth/login`             | No   | Login and receive JWT token                    |
+| PUT    | `/api/auth/update-profile`    | Yes  | Update username and email                      |
+| PUT    | `/api/auth/change-password`   | Yes  | Change password (requires old password verification) |
 
 ### Transactions (`/api/transactions`)
 
-| Method | Endpoint                       | Auth | Description                     |
-| :----- | :----------------------------- | :--- | :------------------------------ |
-| GET    | `/api/transactions`            | Yes  | Get all transactions for user   |
-| POST   | `/api/transactions`            | Yes  | Create a new transaction        |
-| GET    | `/api/transactions/categories` | No   | Get all categories for dropdown |
+| Method | Endpoint                       | Auth | Description                                        |
+| :----- | :----------------------------- | :--- | :------------------------------------------------- |
+| GET    | `/api/transactions`            | Yes  | Get all transactions (supports `?month=` & `?year=` query filters) |
+| POST   | `/api/transactions`            | Yes  | Create transaction (auto-syncs wallet balance via DB transaction) |
+| PUT    | `/api/transactions/:id`        | Yes  | Edit transaction (cross-wallet balance adjustment via DB transaction) |
+| DELETE | `/api/transactions/:id`        | Yes  | Delete transaction (auto-reverses wallet balance via DB transaction) |
+| GET    | `/api/transactions/categories` | Yes  | Get all user-scoped categories                     |
+| POST   | `/api/transactions/categories` | Yes  | Create a new custom category                       |
+
+### Wallets (`/api/wallets`)
+
+| Method | Endpoint              | Auth | Description                                        |
+| :----- | :-------------------- | :--- | :------------------------------------------------- |
+| GET    | `/api/wallets`        | Yes  | Get all wallets for the authenticated user         |
+| POST   | `/api/wallets`        | Yes  | Create wallet (auto-creates initial balance transaction via DB transaction) |
+| PUT    | `/api/wallets/:id`    | Yes  | Update wallet details (name, account number, card theme) |
+| DELETE | `/api/wallets/:id`    | Yes  | Delete a wallet                                    |
 
 ---
 
 ## Database Schema
 
-The application uses three main tables. Below is the SQL script to initialize the database structure:
+The application uses four main tables. Below is the SQL script to initialize the database structure:
 
 ```sql
 -- 1. Create users table
@@ -125,30 +146,52 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL
 );
 
--- 2. Create categories table
+-- 2. Create categories table (user-scoped)
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    type VARCHAR(10) DEFAULT 'expense'
-);
-
--- 3. Create transactions table
-CREATE TABLE transactions (
-    id SERIAL PRIMARY KEY,
-    amount DECIMAL(10,2) NOT NULL,
-    description TEXT,
-    transaction_date DATE DEFAULT CURRENT_DATE,
-    category_id INT REFERENCES categories(id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,
+    type VARCHAR(10) DEFAULT 'expense',
     user_id INT REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 4. Initial Data (Optional)
-INSERT INTO categories (name, type) VALUES
-  ('Food', 'expense'),
-  ('Transport', 'expense'),
-  ('Utilities', 'expense'),
-  ('Entertainment', 'expense');
+-- 3. Create wallets table
+CREATE TABLE wallets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    account_number VARCHAR(50),
+    balance DECIMAL(15,2) DEFAULT 0,
+    color VARCHAR(100) DEFAULT 'indigo',
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. Create transactions table (linked to categories & wallets)
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    amount DECIMAL(15,2) NOT NULL,
+    description TEXT,
+    transaction_date DATE DEFAULT CURRENT_DATE,
+    category_id INT REFERENCES categories(id) ON DELETE CASCADE,
+    wallet_id INT REFERENCES wallets(id) ON DELETE SET NULL,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE
+);
 ```
+
+> **Note:** Default categories ("Gaji" as income, "Makanan" as expense) are automatically created per user during registration via the backend API. No manual seeding is required.
+
+---
+
+## Application Pages
+
+| Page           | Route            | Description                                                     |
+| :------------- | :--------------- | :-------------------------------------------------------------- |
+| Login          | `/login`         | User authentication with email & password                       |
+| Register       | `/register`      | New account creation with success modal & auto-redirect         |
+| Dashboard      | `/dashboard`     | Financial overview with stats, pie chart, area chart & recent transactions |
+| Wallets        | `/wallets`       | Wallet card grid with total accumulated balance display         |
+| Transactions   | `/transactions`  | Full transaction list with search, multi-filter & pagination    |
+| Settings       | `/settings`      | Profile info, password change & category management (tabbed UI) |
+| Reports        | `/reports`       | Coming Soon                                                     |
 
 ---
 
@@ -197,6 +240,7 @@ Once you are inside the PostgreSQL terminal (`psql`), you can use these shortcut
 - **Common SQL Queries:**
   - `SELECT * FROM users;` : View all registered users.
   - `SELECT * FROM categories;` : View all categories.
+  - `SELECT * FROM wallets;` : View all wallets.
   - `SELECT * FROM transactions;` : View all transactions.
   - `DELETE FROM transactions WHERE id = 1;` : Delete a specific transaction.
 
