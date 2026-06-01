@@ -5,7 +5,10 @@ export default function TransactionTable({
   transactions, 
   filterCategory, 
   setFilterCategory, 
-  categories, 
+  categories,
+  wallets,
+  filterWallet,
+  setFilterWallet,
   hideFilter,
   onDelete,
   onEdit,
@@ -23,16 +26,31 @@ export default function TransactionTable({
       <div className="p-6 md:p-8 flex items-center justify-between border-b border-slate-50">
         <h2 className="text-lg font-bold text-slate-800">Transactions</h2>
         {!hideFilter && (
-          <select 
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-slate-50 border-none text-slate-600 text-xs font-bold px-4 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
-          >
-            <option value="All">All Categories</option>
-            {categories?.map((cat) => (
-              <option key={cat.id} value={cat.name}>{cat.name}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            {/* Filter Category */}
+            <select 
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="bg-slate-50 border-none text-slate-600 text-xs font-bold px-4 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+            >
+              <option value="All">All Categories</option>
+              {categories?.map((cat) => (
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
+
+            {/* Filter Wallet */}
+            <select 
+              value={filterWallet}
+              onChange={(e) => setFilterWallet(e.target.value)}
+              className="bg-slate-50 border-none text-slate-600 text-xs font-bold px-4 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+            >
+              <option value="All">All Wallets</option>
+              {wallets?.map((wallet) => (
+                <option key={wallet.id} value={wallet.name}>{wallet.name}</option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 

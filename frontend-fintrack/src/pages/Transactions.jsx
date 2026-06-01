@@ -11,6 +11,7 @@ export default function Transactions({ setIsSidebarOpen }) {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filterCategory, setFilterCategory] = useState('All');
+  const [filterWallet, setFilterWallet] = useState('All');
   const [searchTerm, setSearchTerm] = useState("");
 
   // Ambil format tanggal hari ini (YYYY-MM-DD) sebagai nilai default awal
@@ -98,11 +99,13 @@ export default function Transactions({ setIsSidebarOpen }) {
     const itemYear = date.getFullYear().toString();
 
     const matchesCategory = filterCategory === 'All' ? true : item.category === filterCategory;
+    const walletName = item.wallet_name || item.wallet || 'Main Wallet';
+  const matchesWallet = filterWallet === 'All' ? true : walletName === filterWallet;
     const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesMonth = filterMonth === 'All' ? true : itemMonth === filterMonth;
     const matchesYear = filterYear === 'All' ? true : itemYear === filterYear;
 
-    return matchesCategory && matchesSearch && matchesMonth && matchesYear;
+    return matchesCategory && matchesWallet && matchesSearch && matchesMonth && matchesYear;
   }).sort((a, b) => b.id - a.id);
 
   // 2. Baru kemudian hitung Pagination menggunakan filteredData yang sudah ada
@@ -112,7 +115,7 @@ export default function Transactions({ setIsSidebarOpen }) {
   // Reset page ke 1 jika filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterCategory, filterMonth, filterYear]);
+  }, [searchTerm, filterCategory, filterMonth, filterYear, filterWallet]);
   //otomatis scroll ke atas tabel saat pindah halaman
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -294,6 +297,9 @@ export default function Transactions({ setIsSidebarOpen }) {
         categories={categories}
         filterCategory={filterCategory}
         setFilterCategory={setFilterCategory}
+        wallets={wallets}                     
+        filterWallet={filterWallet}           
+        setFilterWallet={setFilterWallet}
         hideFilter={false}
         onDelete={(item) => { setSelectedTransaction(item); setIsDeleteModalOpen(true); }}
         onEdit={handleEditClick}
