@@ -30,7 +30,7 @@ router.get("/", authenticateToken, async (req, res) => {
       paramIndex++;
     }
 
-    queryText += ` ORDER BY t.transaction_date DESC`;
+    queryText += ` ORDER BY t.transaction_date DESC, t.id DESC`;
     const result = await pool.query(queryText, queryParams);
     res.json(result.rows);
   } catch (err) {
