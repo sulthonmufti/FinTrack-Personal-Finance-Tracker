@@ -10,9 +10,10 @@ router.get("/", authenticateToken, async (req, res) => {
     const { month, year } = req.query;
 
     let queryText = `
-      SELECT t.*, c.name AS category, c.type 
+      SELECT t.*, c.name AS category, c.type, w.name AS wallet_name
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
+      LEFT JOIN wallets w ON t.wallet_id = w.id
       WHERE t.user_id = $1
     `;
     const queryParams = [userId];
@@ -29,7 +30,7 @@ router.get("/", authenticateToken, async (req, res) => {
       paramIndex++;
     }
 
-    queryText += ` ORDER BY t.transaction_date DESC, t.id DESC`;
+    queryText += ` ORDER BY t.transaction_date DESC`;
     const result = await pool.query(queryText, queryParams);
     res.json(result.rows);
   } catch (err) {
