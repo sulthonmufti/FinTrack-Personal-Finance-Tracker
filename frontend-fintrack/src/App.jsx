@@ -8,6 +8,7 @@ import EditProfile from './pages/EditProfile';
 import Transactions from './pages/Transactions';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
+import Reports from './pages/Reports';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -45,9 +46,7 @@ function App() {
               <Route path="/wallets" element={isAuthenticated ? <Wallets setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
               
               <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
-
-              {/* Placeholder untuk halaman yang belum dibuat agar tidak putih/error */}
-              <Route path="/reports" element={isAuthenticated ? <div className="p-8"><h1>Reports Page (Coming Soon)</h1></div> : <Navigate to="/login" />} />
+              <Route path="/reports" element={isAuthenticated ? <Reports setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
               
               <Route path="/settings" element={<Settings setIsSidebarOpen={setIsSidebarOpen} />} />
 

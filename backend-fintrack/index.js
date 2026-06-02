@@ -10,11 +10,13 @@ app.use(express.json());
 const authRoutes = require("./routes/authRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const walletRoutes = require("./routes/walletRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 // Gunakan Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/wallets", walletRoutes);
+app.use("/api/reports", reportRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
