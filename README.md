@@ -200,7 +200,23 @@ CREATE TABLE transactions (
 ### 1. Prerequisites
 
 - Node.js (LTS version recommended)
-- PostgreSQL (Local installation or Docker container)
+- PostgreSQL (local installation)
+- nodemon (optional, for auto-restart on file changes)
+
+**Linux (Ubuntu/Debian) — Install PostgreSQL:**
+
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+**Install nodemon globally (optional):**
+
+```bash
+npm install -g nodemon
+```
 
 ### 2. Database Configuration
 
@@ -215,17 +231,92 @@ DB_PORT=5432
 JWT_SECRET=your_jwt_secret_key
 ```
 
-### 3. Accessing PostgreSQL via Terminal
+### 3. Database Setup
 
-To access and manage the database directly from your terminal (using Docker), execute:
+#### Create the database
+
+**Windows** — Open pgAdmin or psql and run:
+
+```sql
+CREATE DATABASE fintrack_db;
+```
+
+**Linux** — Run via terminal:
+
+```bash
+sudo -u postgres psql -c "CREATE DATABASE fintrack_db;"
+```
+
+> **Linux note:** If the `postgres` user password hasn't been set yet, set it first:
+> ```bash
+> sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'your_password';"
+> ```
+
+#### Create the tables
+
+**Windows** — Open Query Tool in pgAdmin, select `fintrack_db`, then run the SQL below.
+
+**Linux** — Run via terminal:
+
+```bash
+sudo -u postgres psql -d fintrack_db
+```
+
+Then paste and execute the following SQL:
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    type VARCHAR(10) DEFAULT 'expense',
+    user_id INT REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE wallets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    account_number VARCHAR(50),
+    balance DECIMAL(15,2) DEFAULT 0,
+    color VARCHAR(100) DEFAULT 'indigo',
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    amount DECIMAL(15,2) NOT NULL,
+    description TEXT,
+    transaction_date DATE DEFAULT CURRENT_DATE,
+    category_id INT REFERENCES categories(id) ON DELETE CASCADE,
+    wallet_id INT REFERENCES wallets(id) ON DELETE SET NULL,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+> **Note:** Default categories ("Gaji" as income, "Makanan" as expense) are automatically created per user during registration via the backend API. No manual seeding is required.
+
+#### Accessing PostgreSQL via Terminal
+
+**Windows (via Docker):**
 
 ```bash
 docker exec -it postgres-dev psql -U postgres
 ```
 
-#### Helpful PostgreSQL Commands:
+**Linux (local installation):**
 
-Once you are inside the PostgreSQL terminal (`psql`), you can use these shortcuts:
+```bash
+sudo -u postgres psql -d fintrack_db
+```
+
+Once inside the `psql` terminal, these shortcuts are useful:
 
 - **General Commands:**
   - `\l` : List all databases.
@@ -234,7 +325,6 @@ Once you are inside the PostgreSQL terminal (`psql`), you can use these shortcut
 
 - **Viewing Tables:**
   - `\dt` : List tables in the current database.
-  - `\dt *.*` : List all tables in all schemas.
   - `\d table_name` : Show structure (columns, types) of a specific table.
 
 - **Common SQL Queries:**
@@ -244,17 +334,35 @@ Once you are inside the PostgreSQL terminal (`psql`), you can use these shortcut
   - `SELECT * FROM transactions;` : View all transactions.
   - `DELETE FROM transactions WHERE id = 1;` : Delete a specific transaction.
 
-### 4. Setup Backend
+### 4. Setup & Run Backend
 
 ```bash
 cd backend-fintrack
 npm install
+```
+
+**Run with Node.js (standard):**
+
+```bash
 node index.js
+```
+
+**Run with nodemon (auto-restart on file change — recommended for development):**
+
+```bash
+nodemon index.js
 ```
 
 The server will start at `http://localhost:5000`.
 
-### 5. Setup Frontend
+> **Linux note:** If you get a permission error on port 5000, make sure no other process is using it:
+> ```bash
+> sudo lsof -i :5000
+> ```
+
+### 5. Setup & Run Frontend
+
+Open a **new terminal**, then:
 
 ```bash
 cd frontend-fintrack
@@ -262,4 +370,20 @@ npm install
 npm run dev
 ```
 
-The application will be accessible at the local address provided in the terminal (usually `http://localhost:5173`).
+The application will be accessible at `http://localhost:5173`.
+
+> **Linux note:** If you cloned or moved this project from Windows, run the following once to fix line ending differences (CRLF → LF) that cause all files to appear as modified in Git:
+> ```bash
+> git config core.autocrlf input
+> git rm --cached -r .
+> git reset HEAD -- .
+> ```
+
+### 6. Running Both Servers
+
+Backend and frontend must run simultaneously in **separate terminals**:
+
+| Terminal | Command | URL |
+| :------- | :------ | :-- |
+| Terminal 1 | `cd backend-fintrack && nodemon index.js` | `http://localhost:5000` |
+| Terminal 2 | `cd frontend-fintrack && npm run dev` | `http://localhost:5173` |
