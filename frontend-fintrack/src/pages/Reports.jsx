@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { 
   FileText, Calendar, Wallet, TrendingUp, ArrowUpRight, 
-  ArrowDownRight, Award, CheckCircle2, AlertCircle, Info, Sparkles 
+  ArrowDownRight, Award, CheckCircle2, AlertCircle, Info, Sparkles,
+  Download, Printer, RefreshCw
 } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import { 
@@ -11,27 +12,22 @@ import {
 } from 'recharts';
 import ProfileHeader from '../components/ProfileHeader';
 
-// Update palet warna chart: Mengganti hijau dengan variasi biru FinTrack (#3b82f6)
 const COLORS = ['#6366f1', '#3b82f6', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
 
 export default function Reports({ setIsSidebarOpen }) {
-  // Ambil tanggal 30 hari yang lalu & tanggal hari ini untuk default filter
   const getPastDateString = (daysAgo) => {
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
     return d.toISOString().split('T')[0];
   };
 
-  // State Filter
   const [startDate, setStartDate] = useState(getPastDateString(30));
   const [endDate, setEndDate] = useState(getPastDateString(0));
   const [walletId, setWalletId] = useState('All');
   const [wallets, setWallets] = useState([]);
 
-  // State Interaktif untuk Chart Komposisi (Expense / Income)
   const [activePieTab, setActivePieTab] = useState('expense');
 
-  // State Data Report
   const [reportData, setReportData] = useState({
     summary: { total_income: 0, total_expense: 0 },
     categories: [],
@@ -39,7 +35,6 @@ export default function Reports({ setIsSidebarOpen }) {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load Daftar Dompet untuk Dropdown Filter
   useEffect(() => {
     const fetchWallets = async () => {
       try {
@@ -55,7 +50,6 @@ export default function Reports({ setIsSidebarOpen }) {
     fetchWallets();
   }, []);
 
-  // Fetch Data Analisis Laporan Utama
   const fetchReportDetails = async () => {
     setIsLoading(true);
     try {
@@ -78,20 +72,17 @@ export default function Reports({ setIsSidebarOpen }) {
 
   const { summary, categories, trends } = reportData;
 
-  // --- SANITASI DATA MUTLAK (Mengubah nilai negatif menjadi positif untuk keperluan UI/Chart) ---
   const totalIncome = Math.abs(summary?.total_income || 0);
   const totalExpense = Math.abs(summary?.total_expense || 0);
   
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(1) : 0;
 
-  // Sanitasi nilai kategori agar selalu positif saat kalkulasi grafik
   const sanitizedCategories = (categories || []).map(cat => ({
     ...cat,
     value: Math.abs(cat.value || 0)
   }));
 
-  // Sanitasi nilai tren untuk grafik batang
   const sanitizedTrends = (trends || []).map(t => ({
     ...t,
     income: Math.abs(t.income || 0),
@@ -104,7 +95,6 @@ export default function Reports({ setIsSidebarOpen }) {
   const currentPieData = activePieTab === 'expense' ? expenseCategories : incomeCategories;
   const currentTotalValue = activePieTab === 'expense' ? totalExpense : totalIncome;
 
-  // Urutkan pengeluaran dari yang terbesar secara akurat setelah dikonversi ke nilai mutlak
   const topExpenseCat = expenseCategories.length > 0 
     ? [...expenseCategories].sort((a, b) => b.value - a.value)[0] 
     : null;
@@ -112,10 +102,59 @@ export default function Reports({ setIsSidebarOpen }) {
   const totalDays = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))) + 1;
   const avgDailyExpense = totalExpense / totalDays;
 
+  // --- FUNGSI EXPORT DATA KE CSV (EXCEL READABLE) ---
+  const handleExportCSV = () => {
+    if (isLoading || !reportData) return;
+
+    let csvContent = "\uFEFF"; // BOM UTF-8 untuk dukungan penuh Microsoft Excel
+
+    // Header Laporan
+    csvContent += `LAPORAN KEUANGAN FINTRACK\n`;
+    csvContent += `Periode,${startDate} s/d ${endDate}\n`;
+    csvContent += `Filter Dompet,${walletId === 'All' ? 'Semua Dompet' : walletId}\n\n`;
+
+    // Ringkasan Utama
+    csvContent += `RINGKASAN UTAMA\n`;
+    csvContent += `Metrik,Jumlah (IDR)\n`;
+    csvContent += `Total Income,${totalIncome}\n`;
+    csvContent += `Total Expense,${totalExpense}\n`;
+    csvContent += `Net Savings,${netSavings}\n`;
+    csvContent += `Savings Rate,${savingsRate}%\n\n`;
+
+    // Rincian Kategori
+    csvContent += `RINCIAN KATEGORI\n`;
+    csvContent += `Nama Kategori,Tipe,Total (IDR)\n`;
+    sanitizedCategories.forEach(cat => {
+      csvContent += `"${cat.name}",${cat.type},${cat.value}\n`;
+    });
+    csvContent += `\n`;
+
+    // Tren Harian
+    csvContent += `TREN HARIAN\n`;
+    csvContent += `Tanggal,Pemasukan (IDR),Pengeluaran (IDR)\n`;
+    sanitizedTrends.forEach(t => {
+      csvContent += `"${t.date}",${t.income},${t.expense}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Financial_Report_${startDate}_to_${endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- FUNGSI CETAK LAPORAN / CETAK PDF ---
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <>
       {/* HEADER UTAMA */}
-      <header className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
+      <header className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 print:hidden">
         <div className="flex items-center gap-3">
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-slate-100 rounded-xl lg:hidden text-slate-600">
             <HiOutlineMenuAlt2 size={24} />
@@ -130,8 +169,8 @@ export default function Reports({ setIsSidebarOpen }) {
         </div>
       </header>
 
-      {/* FILTER PANEL STICKY BAR */}
-      <section className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between mb-8">
+      {/* FILTER PANEL & TOMBOL ACTION */}
+      <section className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between mb-8 print:hidden">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
             <Calendar size={16} className="text-slate-400" />
@@ -150,9 +189,22 @@ export default function Reports({ setIsSidebarOpen }) {
             </select>
           </div>
         </div>
-        <button onClick={fetchReportDetails} className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-4 py-2 rounded-xl text-xs font-bold transition-all">
-          Refresh Data
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button onClick={fetchReportDetails} title="Refresh Data" className="bg-slate-50 text-slate-600 hover:bg-slate-100 p-2.5 rounded-xl text-xs font-bold transition-all border border-slate-100">
+            <RefreshCw size={16} />
+          </button>
+          
+          <button onClick={handlePrint} title="Cetak / PDF" className="bg-slate-50 text-slate-600 hover:bg-slate-100 p-2.5 rounded-xl text-xs font-bold transition-all border border-slate-100 flex items-center gap-1.5">
+            <Printer size={16} />
+            <span className="hidden sm:inline">Print</span>
+          </button>
+
+          <button onClick={handleExportCSV} className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-indigo-100 active:scale-95">
+            <Download size={16} />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </section>
 
       {isLoading ? (
@@ -161,7 +213,6 @@ export default function Reports({ setIsSidebarOpen }) {
         <>
           {/* CARDS METRIK ANALISIS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            {/* Total Income */}
             <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Total Income</span>
@@ -174,7 +225,6 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            {/* Total Expense */}
             <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Total Expense</span>
@@ -187,7 +237,6 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            {/* Net Savings */}
             <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Net Savings</span>
@@ -202,7 +251,6 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            {/* Savings Rate */}
             <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Savings Rate</span>
@@ -220,7 +268,6 @@ export default function Reports({ setIsSidebarOpen }) {
 
           {/* GRAPHICS SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            {/* Tren Perbandingan Kolom Batang */}
             <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <TrendingUp size={18} className="text-indigo-600" />
@@ -245,11 +292,10 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            {/* Breakdown Struktur Proporsi Keuangan */}
             <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-base font-bold text-slate-800">Financial Structure</h2>
-                <div className="flex bg-slate-100 p-1 rounded-xl">
+                <div className="flex bg-slate-100 p-1 rounded-xl print:hidden">
                   <button 
                     onClick={() => setActivePieTab('expense')}
                     className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${activePieTab === 'expense' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
@@ -282,7 +328,6 @@ export default function Reports({ setIsSidebarOpen }) {
                 )}
               </div>
 
-              {/* Legend List */}
               <div className="mt-4 space-y-2 flex-1 overflow-y-auto max-h-[120px] pr-2">
                 {currentPieData.map((entry, index) => {
                   const percentage = currentTotalValue > 0 ? ((entry.value / currentTotalValue) * 100).toFixed(1) : 0;
@@ -302,7 +347,6 @@ export default function Reports({ setIsSidebarOpen }) {
 
           {/* DETAIL ALOKASI DANA & SMART INSIGHTS */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Diagram Linear Alokasi Kategori Lengkap */}
             <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm">
               <h2 className="text-base font-bold text-slate-800 mb-6">Detailed Category Breakdown</h2>
               <div className="space-y-5">
@@ -339,7 +383,6 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            {/* Smart Financial Insights */}
             <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col">
               <div className="flex items-center gap-2 mb-5">
                 <Sparkles size={18} className="text-indigo-600" />
@@ -370,7 +413,6 @@ export default function Reports({ setIsSidebarOpen }) {
                   </div>
                 )}
 
-                {/* Insight Pengeluaran Tertinggi */}
                 {topExpenseCat && (
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex gap-3">
                     <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0"></div>
@@ -380,7 +422,6 @@ export default function Reports({ setIsSidebarOpen }) {
                   </div>
                 )}
 
-                {/* Insight Rata-Rata Pengeluaran Harian */}
                 {totalExpense > 0 && (
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex gap-3">
                     <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0"></div>
