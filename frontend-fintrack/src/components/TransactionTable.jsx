@@ -107,7 +107,7 @@ export default function TransactionTable({
                               <Edit2 size={14} /> Edit
                             </button>
                             <button 
-                              onClick={() => { onDelete && onDelete(item.id); setOpenMenuId(null); }}
+                              onClick={() => { onDelete && onDelete(item); setOpenMenuId(null); }}
                               className="w-full flex items-center gap-2 px-4 py-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-50"
                             >
                               <Trash2 size={14} /> Delete
@@ -183,7 +183,7 @@ export default function TransactionTable({
                           <Edit2 size={16} />
                         </button>
                         <button 
-                          onClick={() => onDelete && onDelete(item.id)}
+                          onClick={() => onDelete && onDelete(item)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                         >
                           <Trash2 size={16} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Search, Plus, Menu } from 'lucide-react'; 
+import { Search, Plus, CheckCircle2 } from 'lucide-react'; 
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import TransactionTable from "../components/TransactionTable";
 import ProfileHeader from '../components/ProfileHeader';
@@ -23,7 +23,7 @@ export default function Transactions({ setIsSidebarOpen }) {
     return `${year}-${month}-${day}`;
   };
   
-  // State Modal Tambah
+  // State Modal Tambah / Edit
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState('');
@@ -35,10 +35,23 @@ export default function Transactions({ setIsSidebarOpen }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
+  // State Toast Notifikasi Sukses
+  const [toastNotification, setToastNotification] = useState({
+    show: false,
+    title: '',
+    message: ''
+  });
+
+  const showSuccessToast = (title, message) => {
+    setToastNotification({ show: true, title, message });
+    setTimeout(() => {
+      setToastNotification({ show: false, title: '', message: '' });
+    }, 3000);
+  };
+
   const [filterMonth, setFilterMonth] = useState('All');
   const [filterYear, setFilterYear] = useState('All');
 
-  // Definisikan daftar bulan secara statis
   const months = [
     { val: '01', name: 'Januari' }, { val: '02', name: 'Februari' }, { val: '03', name: 'Maret' },
     { val: '04', name: 'April' }, { val: '05', name: 'Mei' }, { val: '06', name: 'Juni' },
@@ -46,7 +59,6 @@ export default function Transactions({ setIsSidebarOpen }) {
     { val: '10', name: 'Oktober' }, { val: '11', name: 'November' }, { val: '12', name: 'Desember' }
   ];
 
-  // Logika untuk mendapatkan daftar Tahun yang unik dari data transaksi
   const dynamicYears = transactions.length > 0 
     ? [...new Set(transactions.map(item => {
         const d = new Date(item.transaction_date);
@@ -100,7 +112,7 @@ export default function Transactions({ setIsSidebarOpen }) {
 
     const matchesCategory = filterCategory === 'All' ? true : item.category === filterCategory;
     const walletName = item.wallet_name || item.wallet || 'Main Wallet';
-  const matchesWallet = filterWallet === 'All' ? true : walletName === filterWallet;
+    const matchesWallet = filterWallet === 'All' ? true : walletName === filterWallet;
     const matchesSearch = item.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesMonth = filterMonth === 'All' ? true : itemMonth === filterMonth;
     const matchesYear = filterYear === 'All' ? true : itemYear === filterYear;
@@ -108,15 +120,13 @@ export default function Transactions({ setIsSidebarOpen }) {
     return matchesCategory && matchesWallet && matchesSearch && matchesMonth && matchesYear;
   }).sort((a, b) => b.id - a.id);
 
-  // 2. Baru kemudian hitung Pagination menggunakan filteredData yang sudah ada
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Reset page ke 1 jika filter berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterCategory, filterMonth, filterYear, filterWallet]);
-  //otomatis scroll ke atas tabel saat pindah halaman
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
@@ -125,13 +135,9 @@ export default function Transactions({ setIsSidebarOpen }) {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
-  // 3. Potong data untuk ditampilkan di tabel
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
-  // State tab aktif untuk modal (expense/income)
   const [activeTab, setActiveTab] = useState('expense');
-
-  // State Edit
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -140,21 +146,17 @@ export default function Transactions({ setIsSidebarOpen }) {
     setEditingId(transaction.id);
     setSelectedTransaction(transaction);
     setDescription(transaction.description);
-    setAmount(Math.abs(transaction.amount)); // Simpan sebagai angka positif di input
-    setCategoryId(transaction.category_id); // Gunakan ID kategori dari database
+    setAmount(Math.abs(transaction.amount)); 
+    setCategoryId(transaction.category_id); 
     setWalletId(transaction.wallet_id || '');
-
-    // Tentukan tab berdasarkan nilai amount: negatif = expense, positif = income
     setActiveTab(transaction.amount < 0 ? 'expense' : 'income');
 
-    // Format tanggal dari database (ISO String / Timestamp) menjadi YYYY-MM-DD
     const formattedDate = transaction.transaction_date ? transaction.transaction_date.split('T')[0] : getTodayDateString();
     setTransactionDate(formattedDate);
 
     setIsAddModalOpen(true);
   };
   
-  //fungsi untuk menambahkan dan mengedit transaksi
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -165,11 +167,10 @@ export default function Transactions({ setIsSidebarOpen }) {
         amount: activeTab === 'expense' ? -Math.abs(parseInt(amount)) : Math.abs(parseInt(amount)),
         description,
         category_id: parseInt(categoryId),
-        wallet_id: parseInt(walletId) // Pastikan dikirim sesuai kebutuhan backend
+        wallet_id: parseInt(walletId)
       };
 
       if (isEditMode) {
-        // PASTIKAN selectedTransaction tidak null sebelum membaca .id
         if (!selectedTransaction || !selectedTransaction.id) {
           throw new Error("ID Transaksi yang akan diedit tidak ditemukan.");
         }
@@ -179,19 +180,19 @@ export default function Transactions({ setIsSidebarOpen }) {
           data, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        showSuccessToast("Berhasil Diperbarui", "Data transaksi telah berhasil diubah.");
       } else {
-        // Mode Tambah Transaksi Baru
         await axios.post(
           'http://localhost:5000/api/transactions', 
           data, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        showSuccessToast("Berhasil Ditambahkan", "Transaksi baru telah berhasil dicatat.");
       }
 
-      fetchData(); // Refresh data tabel
-      closeModal(); // Tutup modal dan reset form
+      fetchData(); 
+      closeModal(); 
     } catch (err) {
-      // Menampilkan detail error asli di console untuk mempermudah debugging
       console.error("Detail Error Sistem:", err.message || err);
       alert("Gagal memproses transaksi. Silakan periksa kembali data Anda.");
     } finally {
@@ -213,11 +214,10 @@ export default function Transactions({ setIsSidebarOpen }) {
 
   return (
     <>
-      {/* header */}
+      {/* HEADER */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div className="flex items-center justify-between w-full md:w-auto">
           <div className="flex items-center gap-4">
-            {/* Tombol Menu */}
             <button 
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
@@ -231,7 +231,6 @@ export default function Transactions({ setIsSidebarOpen }) {
             </div>
           </div>
 
-          {/* ProfileHeader untuk Mobile */}
           <div className="md:hidden">
             <ProfileHeader />
           </div>
@@ -246,7 +245,6 @@ export default function Transactions({ setIsSidebarOpen }) {
             <span>Add Transaction</span>
           </button>
 
-          {/* ProfileHeader untuk Desktop */}
           <div className="hidden md:block pl-4 border-l border-slate-200 ml-2">
             <ProfileHeader />
           </div>
@@ -291,7 +289,7 @@ export default function Transactions({ setIsSidebarOpen }) {
         </div>
       </div>
 
-      {/* TABEL */}
+      {/* TABEL TRANSAKSI */}
       <TransactionTable 
         transactions={currentItems}
         categories={categories}
@@ -309,7 +307,7 @@ export default function Transactions({ setIsSidebarOpen }) {
         totalItems={filteredData.length}
       />
 
-      {/* MODALS */}
+      {/* MODAL EDIT & TAMBAH */}
       <TransactionModal 
         isOpen={isAddModalOpen}
         onClose={closeModal}
@@ -327,24 +325,46 @@ export default function Transactions({ setIsSidebarOpen }) {
         setCategoryId={setCategoryId}
         transactionDate={transactionDate}
         setTransactionDate={setTransactionDate}
-        title={isEditMode ? "Edit Transaction" : "Add Transaction"} // Judul dinamis
+        title={isEditMode ? "Edit Transaction" : "Add Transaction"}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
 
+      {/* MODAL KONFIRMASI HAPUS */}
       <DeleteConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
-          const token = localStorage.getItem('token');
-          await axios.delete(`http://localhost:5000/api/transactions/${selectedTransaction.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          fetchData();
-          setIsDeleteModalOpen(false);
+          try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/transactions/${selectedTransaction.id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchData();
+            setIsDeleteModalOpen(false);
+            
+            // Pemicu Notifikasi Pop-up Sukses
+            showSuccessToast("Berhasil Dihapus", `Transaksi "${selectedTransaction?.description || ''}" telah dihapus.`);
+          } catch (err) {
+            console.error("Gagal menghapus transaksi:", err);
+            alert("Gagal menghapus transaksi. Silakan coba lagi.");
+          }
         }}
         description={selectedTransaction?.description}
       />
+
+      {/* POP-UP OVERLAY NOTIFIKASI SUKSES DENGAN ANIMASI */}
+      {toastNotification.show && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-2xl border border-slate-800 animate-bounce">
+          <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl shrink-0">
+            <CheckCircle2 size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-100">{toastNotification.title}</p>
+            <p className="text-xs text-slate-400">{toastNotification.message}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
