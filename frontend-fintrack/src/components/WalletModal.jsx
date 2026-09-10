@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { formatRupiah } from '../utils/formatters';
 
 export const WALLET_THEMES = {
     indigo: 'bg-indigo-600',
@@ -27,8 +28,8 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
         if (editData) {
             setName(editData.name);
             setAccountNumber(editData.account_number || '');
-            setBalance(editData.balance);
-            // Cek jika data lama berupa class, convert ke ID atau biarkan jika sudah ID
+            setBalance(editData.balance ? formatRupiah(editData.balance.toString()) : '');
+            
             const themeId = Object.keys(WALLET_THEMES).find(key => WALLET_THEMES[key] === editData.color) || editData.color;
             setColor(themeId || 'indigo');
         } else {
@@ -41,9 +42,22 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
 
     if (!isOpen) return null;
 
+    const handleBalanceChange = (e) => {
+        const rawValue = e.target.value.replace(/[^0-9]/g, '');
+        setBalance(formatRupiah(rawValue));
+    };
+
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        onSubmit({ name, account_number: accountNumber, balance: parseFloat(balance || 0), color });
+
+        const numericBalance = parseFloat(balance.toString().replace(/\./g, '').replace(/,/g, '.') || 0);
+
+        onSubmit({ 
+            name, 
+            account_number: accountNumber, 
+            balance: numericBalance, 
+            color 
+        });
     };
 
     return (
@@ -71,8 +85,17 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
 
                     {!editData && (
                         <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Initial Balance (Rp)</label>
-                            <input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0" />
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Initial Balance</label>
+                            <div className="relative flex items-center">
+                                <span className="absolute left-4 text-slate-400 font-bold text-sm select-none">Rp</span>
+                                <input 
+                                    type="text" 
+                                    value={balance} 
+                                    onChange={handleBalanceChange} 
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-700 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                                    placeholder="0" 
+                                />
+                            </div>
                         </div>
                     )}
 
