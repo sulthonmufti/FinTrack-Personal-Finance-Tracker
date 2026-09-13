@@ -52,34 +52,65 @@ router.get("/categories", authenticateToken, async (req, res) => {
   }
 });
 
-// 3. TAMBAH TRANSAKSI (Otomatis Sinkron Saldo Wallet)
+// 3. TAMBAH TRANSAKSI (Dengan Validasi Kecukupan Saldo)
 router.post("/", authenticateToken, async (req, res) => {
   const client = await pool.connect();
   try {
     const { amount, description, category_id, wallet_id, transaction_date } =
       req.body;
     const userId = req.user.id;
+    const numericAmount = parseFloat(amount);
 
-    await client.query("BEGIN"); // Mulai proteksi database
+    await client.query("BEGIN");
 
-    const newTransaction = await client.query(
-      "INSERT INTO transactions (amount, description, category_id, wallet_id, user_id, transaction_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [amount, description, category_id, wallet_id, userId, transaction_date],
-    );
-
-    // Karena dari frontend 'amount' sudah berwujud minus (pengeluaran) atau plus (pemasukan),
-    // kita cukup menambahkan 'amount' tersebut ke balance dompet.
     if (wallet_id) {
+      // Cek saldo dompet saat ini
+      const walletCheck = await client.query(
+        "SELECT balance FROM wallets WHERE id = $1 AND user_id = $2",
+        [wallet_id, userId],
+      );
+
+      if (walletCheck.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Dompet tidak ditemukan." });
+      }
+
+      const currentBalance = parseFloat(walletCheck.rows[0].balance);
+
+      // Jika nominal bernilai minus (pengeluaran) dan saldo kurang, cegah transaksi
+      if (currentBalance + numericAmount < 0) {
+        await client.query("ROLLBACK");
+        return res
+          .status(400)
+          .json({
+            message:
+              "Saldo dompet tidak mencukupi untuk melakukan transaksi ini.",
+          });
+      }
+
+      // Update saldo dompet
       await client.query(
         "UPDATE wallets SET balance = balance + $1 WHERE id = $2 AND user_id = $3",
-        [amount, wallet_id, userId],
+        [numericAmount, wallet_id, userId],
       );
     }
 
-    await client.query("COMMIT"); // Simpan permanen
+    const newTransaction = await client.query(
+      "INSERT INTO transactions (amount, description, category_id, wallet_id, user_id, transaction_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [
+        numericAmount,
+        description,
+        category_id,
+        wallet_id,
+        userId,
+        transaction_date,
+      ],
+    );
+
+    await client.query("COMMIT");
     res.json(newTransaction.rows[0]);
   } catch (err) {
-    await client.query("ROLLBACK"); // Batalkan semua jika ada error
+    await client.query("ROLLBACK");
     console.error(err.message);
     res.status(500).send("Gagal menyimpan transaksi");
   } finally {
@@ -87,7 +118,7 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
-// 4. HAPUS TRANSAKSI (Otomatis Kembalikan Saldo Wallet)
+// 4. HAPUS TRANSAKSI (Kembalikan Saldo)
 router.delete("/:id", authenticateToken, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -96,7 +127,6 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
     await client.query("BEGIN");
 
-    // Cari tahu dulu data nominal dan wallet yang akan dihapus
     const transCheck = await client.query(
       "SELECT amount, wallet_id FROM transactions WHERE id = $1 AND user_id = $2",
       [id, userId],
@@ -109,7 +139,6 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
     const { amount, wallet_id } = transCheck.rows[0];
 
-    // Karena transaksinya dihapus, saldonya harus di-reverse (dikurangi nominal yang dulu masuk)
     if (wallet_id) {
       await client.query(
         "UPDATE wallets SET balance = balance - $1 WHERE id = $2 AND user_id = $3",
@@ -133,7 +162,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// 5. Tambah Kategori (Tetap seperti asli)
+// 5. Tambah Kategori
 router.post("/categories", authenticateToken, async (req, res) => {
   try {
     const { name, type } = req.body;
@@ -148,17 +177,18 @@ router.post("/categories", authenticateToken, async (req, res) => {
   }
 });
 
-// 6. EDIT TRANSAKSI (Otomatis Penyesuaian Silang Saldo Wallet)
+// 6. EDIT TRANSAKSI (Dengan Validasi Kecukupan Saldo Sisa)
 router.put("/:id", authenticateToken, async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
     const { amount, description, category_id, wallet_id } = req.body;
     const userId = req.user.id;
+    const newAmount = parseFloat(amount);
 
     await client.query("BEGIN");
 
-    // A. Ambil data lama sebelum diubah
+    // Ambil data lama transaksi
     const oldCheck = await client.query(
       "SELECT amount, wallet_id FROM transactions WHERE id = $1 AND user_id = $2",
       [id, userId],
@@ -169,7 +199,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
     }
     const oldTrans = oldCheck.rows[0];
 
-    // B. Tarik kembali (reverse) nominal lama dari wallet lama
+    // Kembalikan saldo lama sementara untuk pengecekan
     if (oldTrans.wallet_id) {
       await client.query(
         "UPDATE wallets SET balance = balance - $1 WHERE id = $2 AND user_id = $3",
@@ -177,19 +207,42 @@ router.put("/:id", authenticateToken, async (req, res) => {
       );
     }
 
-    // C. Update data transaksinya dengan yang baru
-    const result = await pool.query(
-      "UPDATE transactions SET amount = $1, description = $2, category_id = $3, wallet_id = $4 WHERE id = $5 AND user_id = $6 RETURNING *",
-      [amount, description, category_id, wallet_id, id, userId],
-    );
-
-    // D. Terapkan nominal baru ke wallet yang baru
+    // Cek saldo dompet target setelah pembatalan transaksi lama
     if (wallet_id) {
+      const targetWallet = await client.query(
+        "SELECT balance FROM wallets WHERE id = $1 AND user_id = $2",
+        [wallet_id, userId],
+      );
+
+      if (targetWallet.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Dompet tidak ditemukan." });
+      }
+
+      const availableBalance = parseFloat(targetWallet.rows[0].balance);
+
+      if (availableBalance + newAmount < 0) {
+        await client.query("ROLLBACK");
+        return res
+          .status(400)
+          .json({
+            message:
+              "Saldo dompet tidak mencukupi untuk pembaruan transaksi ini.",
+          });
+      }
+
+      // Terapkan penyesuaian nominal baru ke dompet target
       await client.query(
         "UPDATE wallets SET balance = balance + $1 WHERE id = $2 AND user_id = $3",
-        [amount, wallet_id, userId],
+        [newAmount, wallet_id, userId],
       );
     }
+
+    // Update record transaksi
+    const result = await client.query(
+      "UPDATE transactions SET amount = $1, description = $2, category_id = $3, wallet_id = $4 WHERE id = $5 AND user_id = $6 RETURNING *",
+      [newAmount, description, category_id, wallet_id, id, userId],
+    );
 
     await client.query("COMMIT");
     res.json(result.rows[0]);

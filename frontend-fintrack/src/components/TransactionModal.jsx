@@ -23,29 +23,22 @@ export default function TransactionModal({
   activeTab: activeTabProp,
   setActiveTab: setActiveTabProp
 }) {
-  // Gunakan state lokal sebagai fallback jika props tidak dikirim (misal dari Dashboard)
   const [localActiveTab, setLocalActiveTab] = useState('expense');
   const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
   const setActiveTab = typeof setActiveTabProp === 'function' ? setActiveTabProp : setLocalActiveTab;
-  // Filter kategori berdasarkan tab yang aktif
   const filteredCategories = categories.filter(cat => cat.type === activeTab);
 
-  // Memastikan kategori yang terpilih selalu valid di dalam tab yang aktif
   useEffect(() => {
     if (isOpen && filteredCategories.length > 0) {
       const isIdValidInTab = filteredCategories.some(cat => cat.id === Number(categoryId));
-      
-      // Jika kategori saat ini tidak ada di tab aktif, set ke data pertama di tab tersebut
       if (!isIdValidInTab) {
         setCategoryId(filteredCategories[0].id);
       }
     }
-  }, [activeTab, isOpen]); // Pantau perubahan tab atau pembukaan modal
+  }, [activeTab, isOpen]);
 
-  // Otomatis memilih wallet pertama saat modal dibuka
   useEffect(() => {
     if (isOpen && wallets && wallets.length > 0 && !walletId) {
-      // Pastikan fungsi setWalletId benar-benar dikirim sebagai props sebelum dipanggil
       if (typeof setWalletId === 'function') {
         setWalletId(wallets[0].id);
       }
@@ -53,6 +46,11 @@ export default function TransactionModal({
   }, [isOpen, wallets, walletId, setWalletId]);
 
   if (!isOpen) return null;
+
+  // Cek validasi saldo tidak mencukupi di sisi client
+  const selectedWallet = wallets.find(w => String(w.id) === String(walletId));
+  const numericAmount = parseFloat(amount || 0);
+  const isInsufficient = activeTab === 'expense' && selectedWallet && numericAmount > parseFloat(selectedWallet.balance || 0);
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
@@ -98,7 +96,7 @@ export default function TransactionModal({
         {/* Form Container */}
         <form onSubmit={onSubmit} className="space-y-4">
           
-          {/* dropdown wallet */}
+          {/* Dropdown Wallet */}
           <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
               Select Wallet
@@ -121,7 +119,7 @@ export default function TransactionModal({
             </select>
           </div>
 
-          {/* input Deskripsi */}
+          {/* Input Deskripsi */}
           <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Description</label>
             <input 
@@ -134,7 +132,7 @@ export default function TransactionModal({
             />
           </div>
 
-          {/* input Kategori */}
+          {/* Input Kategori */}
           <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Category</label>
             <select 
@@ -154,7 +152,7 @@ export default function TransactionModal({
             </select>
           </div>
 
-          {/* input Tanggal */}
+          {/* Input Tanggal */}
           <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Date</label>
             <div className="relative">
@@ -169,7 +167,7 @@ export default function TransactionModal({
             </div>
           </div>
 
-          {/* input Nominal */}
+          {/* Input Nominal */}
           <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Amount (Rp)</label>
             <input 
@@ -181,20 +179,29 @@ export default function TransactionModal({
                   setAmount(rawValue);
                 }
               }}
-              className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 font-bold text-lg transition-all ${
-                activeTab === 'expense' ? 'focus:ring-rose-500 text-rose-600' : 'focus:ring-emerald-500 text-emerald-600'
+              className={`w-full bg-slate-50 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 font-bold text-lg transition-all ${
+                isInsufficient
+                  ? 'border-rose-300 text-rose-600 focus:ring-rose-500'
+                  : activeTab === 'expense'
+                    ? 'border-slate-200 focus:ring-rose-500 text-rose-600'
+                    : 'border-slate-200 focus:ring-emerald-500 text-emerald-600'
               }`} 
               placeholder="0"
               required
             />
+            {isInsufficient && (
+              <p className="text-xs text-rose-500 font-medium mt-1">
+                Saldo dompet tidak mencukupi untuk pengeluaran ini.
+              </p>
+            )}
           </div>
 
-          {/* tombol Simpan */}
+          {/* Tombol Simpan */}
           <button 
             type="submit" 
-            disabled={isLoading || filteredCategories.length === 0 || wallets.length === 0}
+            disabled={isLoading || filteredCategories.length === 0 || wallets.length === 0 || isInsufficient}
             className={`w-full py-4 rounded-2xl font-bold shadow-lg transition-all active:scale-[0.98] ${
-              isLoading || filteredCategories.length === 0 || wallets.length === 0
+              isLoading || filteredCategories.length === 0 || wallets.length === 0 || isInsufficient
                 ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' 
                 : activeTab === 'expense'
                   ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-100'
