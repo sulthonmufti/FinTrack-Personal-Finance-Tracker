@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens" alt="JWT" />
 </div>
 
-FinTrack is a full-stack personal finance tracking application designed to help users manage daily transactions, digital wallets, and expense categories efficiently. The project is built with a modern architecture using Node.js on the Backend and React (Vite) on the Frontend, featuring JWT-based authentication, wallet balance synchronization, and a modular MVC-ish folder structure.
+FinTrack is a full-stack personal finance tracking application designed to help users manage daily transactions, digital wallets, and expense categories efficiently. The project is built with a modern architecture using Node.js on the Backend and React (Vite) on the Frontend, featuring JWT-based authentication, wallet balance synchronization, a dedicated financial reports page with CSV export, and a modular MVC-ish folder structure.
 
 ---
 
@@ -18,9 +18,11 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 
 - **User Authentication:** Register (with auto-login & default categories), Login, and Logout with JWT-based session management (24h expiry).
 - **Wallet Management:** Full CRUD for digital wallets — add wallets with initial balance (auto-creates income transaction), edit details (name, account number, card theme), and delete with confirmation.
+- **Inter-Wallet Transfer:** Transfer funds between wallets with real-time balance validation, a dedicated Transfer modal, and atomic DB transactions (`BEGIN`/`COMMIT`/`ROLLBACK`) to guarantee data integrity.
 - **Transaction Management:** Full CRUD — add, edit, and delete financial transactions with automatic wallet balance synchronization using PostgreSQL database transactions (`BEGIN`/`COMMIT`/`ROLLBACK`).
 - **Categorization:** User-scoped categories (income & expense types) with custom category creation via Settings page. Default categories ("Gaji", "Makanan") are auto-generated on registration.
 - **Interactive Dashboard:** Visualize data with dynamic Pie Charts (switchable expense/income mode), Area Charts for trends, financial statistics cards, month-over-month comparison percentages, and a hide/show balance toggle.
+- **Financial Reports:** Dedicated Reports page with date-range & per-wallet filters, Bar Chart (Income vs Expense trend), Donut Chart (Financial Structure), Category Breakdown with progress bars, Smart Insights panel, and one-click **Export to CSV** & **Print / PDF** support.
 - **Advanced Filtering:** Global month & year filter on Dashboard, and search + category + month + year filters with pagination (10 items/page) on Transactions page.
 - **Settings Hub:** Tabbed interface for Profile editing, Password change (with old password verification), and Category management (add new categories with type selection).
 - **Multi-page Navigation:** Smooth routing with protected routes via React Router DOM, responsive sidebar with mobile hamburger menu support.
@@ -57,8 +59,9 @@ FinTrack/
 │   │   └── authMiddleware.js   # JWT token verification middleware
 │   ├── routes/
 │   │   ├── authRoutes.js       # Auth endpoints (register, login, update-profile, change-password)
+│   │   ├── reportRoutes.js     # Financial report endpoint (summary, category breakdown, daily trends)
 │   │   ├── transactionRoutes.js # Transaction & category CRUD endpoints (with wallet sync)
-│   │   └── walletRoutes.js     # Wallet CRUD endpoints (with initial balance transaction)
+│   │   └── walletRoutes.js     # Wallet CRUD endpoints (with initial balance tx & inter-wallet transfer)
 │   ├── .env                    # Environment variables (Hidden/Ignored)
 │   ├── index.js                # Main entry point & route mounting
 │   └── package.json            # Backend dependencies
@@ -74,6 +77,7 @@ FinTrack/
 │   │   │   ├── StatsGrid.jsx           # Financial statistics cards & chart widgets
 │   │   │   ├── TransactionModal.jsx    # Add/edit transaction modal form (with wallet & category selection)
 │   │   │   ├── TransactionTable.jsx    # Transaction list table with pagination
+│   │   │   ├── TransferModal.jsx       # Inter-wallet transfer modal (with balance validation & insufficient funds guard)
 │   │   │   ├── WalletCard.jsx          # Individual wallet card component (with theme colors)
 │   │   │   └── WalletModal.jsx         # Add/edit wallet modal form (with card theme picker)
 │   │   ├── pages/              # Page-level components (routed views)
@@ -81,9 +85,10 @@ FinTrack/
 │   │   │   ├── EditProfile.jsx       # Legacy profile edit page
 │   │   │   ├── Login.jsx             # Login page
 │   │   │   ├── Register.jsx          # Registration page with success modal & auto-login
+│   │   │   ├── Reports.jsx           # Financial report page with date/wallet filters, charts, CSV export & print
 │   │   │   ├── Settings.jsx          # Settings hub (Profile, Security, Categories tabs)
 │   │   │   ├── Transactions.jsx      # Full transaction management with search, filter & pagination
-│   │   │   └── Wallets.jsx           # Wallet management page with card grid layout
+│   │   │   └── Wallets.jsx           # Wallet management page with card grid layout & transfer button
 │   │   ├── utils/
 │   │   │   └── formatters.js         # Currency & date formatting helpers
 │   │   ├── App.jsx             # Root component with routing & auth guard
@@ -124,12 +129,19 @@ FinTrack/
 
 ### Wallets (`/api/wallets`)
 
-| Method | Endpoint              | Auth | Description                                        |
-| :----- | :-------------------- | :--- | :------------------------------------------------- |
-| GET    | `/api/wallets`        | Yes  | Get all wallets for the authenticated user         |
-| POST   | `/api/wallets`        | Yes  | Create wallet (auto-creates initial balance transaction via DB transaction) |
-| PUT    | `/api/wallets/:id`    | Yes  | Update wallet details (name, account number, card theme) |
-| DELETE | `/api/wallets/:id`    | Yes  | Delete a wallet                                    |
+| Method | Endpoint                    | Auth | Description                                        |
+| :----- | :-------------------------- | :--- | :------------------------------------------------- |
+| GET    | `/api/wallets`              | Yes  | Get all wallets for the authenticated user         |
+| POST   | `/api/wallets`              | Yes  | Create wallet (auto-creates initial balance transaction via DB transaction) |
+| POST   | `/api/wallets/transfer`     | Yes  | Transfer funds between two wallets (atomic DB transaction with balance validation) |
+| PUT    | `/api/wallets/:id`          | Yes  | Update wallet details (name, account number, card theme) |
+| DELETE | `/api/wallets/:id`          | Yes  | Delete a wallet                                    |
+
+### Reports (`/api/reports`)
+
+| Method | Endpoint       | Auth | Description                                                   |
+| :----- | :------------- | :--- | :------------------------------------------------------------ |
+| GET    | `/api/reports` | Yes  | Get financial report data — summary, category breakdown & daily trends. Requires `?startDate=` & `?endDate=`. Optional `?walletId=` filter. |
 
 ---
 
@@ -183,15 +195,15 @@ CREATE TABLE transactions (
 
 ## Application Pages
 
-| Page           | Route            | Description                                                     |
-| :------------- | :--------------- | :-------------------------------------------------------------- |
-| Login          | `/login`         | User authentication with email & password                       |
-| Register       | `/register`      | New account creation with success modal & auto-redirect         |
-| Dashboard      | `/dashboard`     | Financial overview with stats, pie chart, area chart & recent transactions |
-| Wallets        | `/wallets`       | Wallet card grid with total accumulated balance display         |
-| Transactions   | `/transactions`  | Full transaction list with search, multi-filter & pagination    |
-| Settings       | `/settings`      | Profile info, password change & category management (tabbed UI) |
-| Reports        | `/reports`       | Coming Soon                                                     |
+| Page           | Route            | Status      | Description                                                     |
+| :------------- | :--------------- | :---------- | :-------------------------------------------------------------- |
+| Login          | `/login`         | ✅ Done      | User authentication with email & password                       |
+| Register       | `/register`      | ✅ Done      | New account creation with success modal & auto-redirect         |
+| Dashboard      | `/dashboard`     | ✅ Done      | Financial overview with stats, pie chart, area chart & recent transactions |
+| Wallets        | `/wallets`       | ✅ Done      | Wallet card grid with total balance, add/edit/delete & inter-wallet transfer |
+| Transactions   | `/transactions`  | ✅ Done      | Full transaction list with search, multi-filter & pagination    |
+| Reports        | `/reports`       | ✅ Done      | Financial report with date/wallet filters, bar & pie charts, category breakdown, smart insights, CSV export & print |
+| Settings       | `/settings`      | ✅ Done      | Profile info, password change & category management (tabbed UI) |
 
 ---
 
