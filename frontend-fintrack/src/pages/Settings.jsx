@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Lock, Tag, Settings as SettingsIcon, Plus, Loader2, CheckCircle2, ShieldCheck, XCircle, ArrowRight, Menu } from 'lucide-react';
+import { User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 
 export default function Settings({ setIsSidebarOpen }) {
@@ -83,11 +83,13 @@ export default function Settings({ setIsSidebarOpen }) {
     } finally { setIsLoading(false); }
   };
 
+  const expenseCategories = categories.filter(cat => cat.type === 'expense');
+  const incomeCategories = categories.filter(cat => cat.type === 'income');
+
   return (
     <div className="max-w-6xl mx-auto pb-10 px-4 md:px-8">
-      {/* 1. Header & Hamburger Inline */}
+      {/* Header & Navigation */}
       <div className="flex items-center gap-4 py-6 mb-4 md:mb-8">
-        {/* Hamburger Menu: Muncul di Mobile/Tablet */}
         <button 
           onClick={() => setIsSidebarOpen(true)}
           className="lg:hidden p-2 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
@@ -95,19 +97,15 @@ export default function Settings({ setIsSidebarOpen }) {
           <HiOutlineMenuAlt2 size={24} />
         </button>
 
-        <div className="flex items-center gap-3">
-          
-          {/* Judul dan Deskripsi Baru */}
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Settings</h1>
-            <p className="text-slate-500 text-xs hidden md:block mt-0.5">
-              Manage your account preferences and transaction categories
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Settings</h1>
+          <p className="text-slate-500 text-xs hidden md:block mt-0.5">
+            Manage your account preferences and transaction categories
+          </p>
         </div>
       </div>
 
-      {/* 2. Tabs Navigation - Full Width on Mobile */}
+      {/* Tabs Navigation */}
       <div className="mb-8 -mx-4 px-4 md:mx-0 md:px-0">
         <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-full overflow-x-auto no-scrollbar scroll-smooth">
           <div className="flex gap-2 min-w-max">
@@ -124,7 +122,7 @@ export default function Settings({ setIsSidebarOpen }) {
         </div>
       </div>
 
-      {/* 3. Main Card Content - Back to Normal Width */}
+      {/* Main Card Content */}
       <div className="bg-white p-6 md:p-12 rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[450px]">
         
         {/* Profile Tab */}
@@ -166,29 +164,87 @@ export default function Settings({ setIsSidebarOpen }) {
         {activeTab === 'categories' && (
           <div className="animate-in fade-in slide-in-from-bottom-3 duration-500">
             <h2 className="text-xl font-bold text-slate-800 mb-8">Manage Categories</h2>
+
+            {/* Form Input */}
             <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3 mb-10 bg-slate-50 p-4 rounded-[2rem]">
-              <input type="text" placeholder="New Category Name" className="flex-1 px-6 py-4 bg-white border-none rounded-2xl text-sm outline-none shadow-sm" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} />
-              <select className="px-5 py-4 bg-white border-none rounded-2xl text-sm font-bold text-slate-600 outline-none shadow-sm" value={newCatType} onChange={(e) => setNewCatType(e.target.value)}>
+              <input 
+                type="text" 
+                placeholder="New Category Name" 
+                className="flex-1 px-6 py-4 bg-white border-none rounded-2xl text-sm outline-none shadow-sm" 
+                value={newCatName} 
+                onChange={(e) => setNewCatName(e.target.value)} 
+              />
+              <select 
+                className="px-5 py-4 bg-white border-none rounded-2xl text-sm font-bold text-slate-600 outline-none shadow-sm cursor-pointer" 
+                value={newCatType} 
+                onChange={(e) => setNewCatType(e.target.value)}
+              >
                 <option value="expense">Expense</option>
                 <option value="income">Income</option>
               </select>
-              <button type="submit" className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-100">
+              <button 
+                type="submit" 
+                className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 active:scale-95"
+              >
                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : <><Plus size={20} /> Add</>}
               </button>
             </form>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.map((cat) => (
-                <div key={cat.id} className="p-5 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col gap-1">
-                  <p className="text-sm font-bold text-slate-700">{cat.name}</p>
-                  <p className={`text-[9px] font-black uppercase tracking-widest ${cat.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>{cat.type}</p>
+
+            {/* Kelompok Kategori */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Expense Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Expense Categories</h3>
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    {expenseCategories.length}
+                  </span>
                 </div>
-              ))}
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {expenseCategories.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pengeluaran.</p>
+                  ) : (
+                    expenseCategories.map((cat) => (
+                      <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-700">{cat.name}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">Expense</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Income Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Income Categories</h3>
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    {incomeCategories.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {incomeCategories.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pemasukan.</p>
+                  ) : (
+                    incomeCategories.map((cat) => (
+                      <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-700">{cat.name}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Income</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
       </div>
 
-      {/* 4. Overlay Modal Feedback */}
+      {/* Modal Feedback */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowModal(false)}></div>
