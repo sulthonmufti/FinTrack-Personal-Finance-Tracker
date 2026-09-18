@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { 
   FileText, Calendar, Wallet, TrendingUp, ArrowUpRight, 
-  ArrowDownRight, Award, CheckCircle2, AlertCircle, Info, Sparkles,
-  Download, Printer, RefreshCw
+  ArrowDownRight, Award, Sparkles, Download, Printer, RefreshCw
 } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import { 
@@ -102,18 +101,15 @@ export default function Reports({ setIsSidebarOpen }) {
   const totalDays = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))) + 1;
   const avgDailyExpense = totalExpense / totalDays;
 
-  // --- FUNGSI EXPORT DATA KE CSV (EXCEL READABLE) ---
+  // EXPORT CSV
   const handleExportCSV = () => {
     if (isLoading || !reportData) return;
 
-    let csvContent = "\uFEFF"; // BOM UTF-8 untuk dukungan penuh Microsoft Excel
-
-    // Header Laporan
+    let csvContent = "\uFEFF";
     csvContent += `LAPORAN KEUANGAN FINTRACK\n`;
     csvContent += `Periode,${startDate} s/d ${endDate}\n`;
     csvContent += `Filter Dompet,${walletId === 'All' ? 'Semua Dompet' : walletId}\n\n`;
 
-    // Ringkasan Utama
     csvContent += `RINGKASAN UTAMA\n`;
     csvContent += `Metrik,Jumlah (IDR)\n`;
     csvContent += `Total Income,${totalIncome}\n`;
@@ -121,7 +117,6 @@ export default function Reports({ setIsSidebarOpen }) {
     csvContent += `Net Savings,${netSavings}\n`;
     csvContent += `Savings Rate,${savingsRate}%\n\n`;
 
-    // Rincian Kategori
     csvContent += `RINCIAN KATEGORI\n`;
     csvContent += `Nama Kategori,Tipe,Total (IDR)\n`;
     sanitizedCategories.forEach(cat => {
@@ -129,7 +124,6 @@ export default function Reports({ setIsSidebarOpen }) {
     });
     csvContent += `\n`;
 
-    // Tren Harian
     csvContent += `TREN HARIAN\n`;
     csvContent += `Tanggal,Pemasukan (IDR),Pengeluaran (IDR)\n`;
     sanitizedTrends.forEach(t => {
@@ -146,7 +140,6 @@ export default function Reports({ setIsSidebarOpen }) {
     document.body.removeChild(link);
   };
 
-  // --- FUNGSI CETAK LAPORAN / CETAK PDF ---
   const handlePrint = () => {
     window.print();
   };
@@ -169,7 +162,7 @@ export default function Reports({ setIsSidebarOpen }) {
         </div>
       </header>
 
-      {/* FILTER PANEL & TOMBOL ACTION */}
+      {/* FILTER PANEL */}
       <section className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between mb-8 print:hidden">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
@@ -383,50 +376,51 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
+            {/* SMART INSIGHTS SECTION (REVISED DESIGN) */}
             <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col">
-              <div className="flex items-center gap-2 mb-5">
+              <div className="flex items-center gap-2 mb-6">
                 <Sparkles size={18} className="text-indigo-600" />
                 <h2 className="text-base font-bold text-slate-800">Smart Insights</h2>
               </div>
 
-              <div className="space-y-4 flex-1">
+              <div className="space-y-3 flex-1">
                 {netSavings < 0 ? (
-                  <div className="p-4 bg-rose-50/70 border border-rose-100 rounded-2xl flex gap-3">
-                    <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={18} />
-                    <p className="text-xs text-rose-700 leading-relaxed font-medium">
-                      <strong>Defisit Terdeteksi:</strong> Pengeluaran Anda melebihi pendapatan sebesar Rp {Math.abs(netSavings).toLocaleString('id-ID')}. Segera evaluasi pengeluaran non-esensial Anda.
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      <strong className="text-slate-800">Defisit Terdeteksi:</strong> Pengeluaran Anda melebihi pendapatan sebesar <span className="font-bold text-rose-600">Rp {Math.abs(netSavings).toLocaleString('id-ID')}</span>. Pertimbangkan untuk meninjau alokasi pengeluaran.
                     </p>
                   </div>
                 ) : savingsRate < 20 ? (
-                  <div className="p-4 bg-amber-50/70 border border-amber-100 rounded-2xl flex gap-3">
-                    <Info className="text-amber-600 shrink-0 mt-0.5" size={18} />
-                    <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                      <strong>Tabungan Minim:</strong> Rasio menabung Anda ({savingsRate}%) masih di bawah target ideal 20%. Cobalah untuk mulai mengalokasikan dana tabungan di awal bulan.
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      <strong className="text-slate-800">Rasio Tabungan Rendah:</strong> Tingkat menabung Anda saat ini (<span className="font-bold text-amber-600">{savingsRate}%</span>) masih di bawah target ideal 20%.
                     </p>
                   </div>
                 ) : (
-                  <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl flex gap-3">
-                    <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={18} />
-                    <p className="text-xs text-blue-700 leading-relaxed font-medium">
-                      <strong>Kondisi Prima:</strong> Luar biasa! Rasio menabung Anda mencapai {savingsRate}%. Surplus ini sangat baik jika dialokasikan ke dalam instrumen investasi atau dana darurat.
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      <strong className="text-slate-800">Kondisi Finansial Baik:</strong> Rasio menabung Anda mencapai <span className="font-bold text-emerald-600">{savingsRate}%</span>. Surplus ini dapat dialokasikan ke dana darurat atau investasi.
                     </p>
                   </div>
                 )}
 
                 {topExpenseCat && (
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex gap-3">
-                    <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0"></div>
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Pusat pengeluaran terbesar Anda berada pada kategori <strong className="text-slate-800">"{topExpenseCat.name}"</strong> dengan akumulasi total dana sebesar <strong>Rp {topExpenseCat.value.toLocaleString('id-ID')}</strong>.
+                      Pengeluaran terbesar berada pada kategori <strong className="text-slate-800">"{topExpenseCat.name}"</strong> dengan akumulasi <strong className="text-slate-800">Rp {topExpenseCat.value.toLocaleString('id-ID')}</strong>.
                     </p>
                   </div>
                 )}
 
                 {totalExpense > 0 && (
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex gap-3">
-                    <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0"></div>
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Selama periode rentang waktu <strong className="text-slate-800">{totalDays} hari</strong> ini, rata-rata dana yang Anda belanjakan adalah sebesar <strong>Rp {Math.round(avgDailyExpense).toLocaleString('id-ID')} per hari</strong>.
+                      Rata-rata pengeluaran harian Anda dalam <strong className="text-slate-800">{totalDays} hari</strong> terakhir adalah sebesar <strong className="text-slate-800">Rp {Math.round(avgDailyExpense).toLocaleString('id-ID')}/hari</strong>.
                     </p>
                   </div>
                 )}

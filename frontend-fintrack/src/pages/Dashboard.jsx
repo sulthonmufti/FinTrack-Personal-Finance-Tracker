@@ -109,7 +109,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
   //state hide saldo
   const [showBalances, setShowBalances] = useState(() => {
     const saved = localStorage.getItem('showBalances');
-    return saved !== null ? JSON.parse(saved) : true;
+    return saved !== null ? JSON.parse(saved) : false;
   });
 
   // Efek untuk menyimpan status mata setiap kali di-klik
