@@ -132,12 +132,13 @@ export default function Reports({ setIsSidebarOpen }) {
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Financial_Report_${startDate}_to_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const link = document.append;
+    const linkEl = document.createElement('a');
+    linkEl.setAttribute('href', url);
+    linkEl.setAttribute('download', `Financial_Report_${startDate}_to_${endDate}.csv`);
+    document.body.appendChild(linkEl);
+    linkEl.click();
+    document.body.removeChild(linkEl);
   };
 
   const handlePrint = () => {
@@ -146,7 +147,62 @@ export default function Reports({ setIsSidebarOpen }) {
 
   return (
     <>
-      {/* HEADER UTAMA */}
+      {/* CSS KHUSUS UNTUK METODE CETAK (PRINT & PRINT PREVIEW) */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 12mm 10mm;
+          }
+          body {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .print-header-info {
+            display: block !important;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
+          }
+          .print-avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .print-grid-2 {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 0.75rem !important;
+          }
+          .print-grid-3 {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 1rem !important;
+          }
+          .print-card {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 1rem !important;
+            padding: 1rem !important;
+          }
+        }
+      `}</style>
+
+      {/* HEADER TAMPILAN PRINT SAJA */}
+      <div className="hidden print-header-info">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Financial Report</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Periode: {startDate} s/d {endDate} | Dompet: {walletId === 'All' ? 'Semua Dompet' : walletId}
+            </p>
+          </div>
+          <span className="text-[10px] text-slate-400 font-mono">FinTrack System</span>
+        </div>
+      </div>
+
+      {/* HEADER UTAMA (LAYAR) */}
       <header className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 print:hidden">
         <div className="flex items-center gap-3">
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-slate-100 rounded-xl lg:hidden text-slate-600">
@@ -205,11 +261,11 @@ export default function Reports({ setIsSidebarOpen }) {
       ) : (
         <>
           {/* CARDS METRIK ANALISIS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 print-grid-2 gap-5 mb-8 print-avoid-break">
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm print-card flex flex-col justify-between min-h-[110px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Total Income</span>
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0"><ArrowUpRight size={16} /></div>
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0 print:hidden"><ArrowUpRight size={16} /></div>
               </div>
               <div className="w-full">
                 <h3 className="text-lg font-bold text-slate-800 tracking-tight leading-none whitespace-nowrap overflow-hidden text-ellipsis">
@@ -218,10 +274,10 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm print-card flex flex-col justify-between min-h-[110px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Total Expense</span>
-                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl shrink-0"><ArrowDownRight size={16} /></div>
+                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl shrink-0 print:hidden"><ArrowDownRight size={16} /></div>
               </div>
               <div className="w-full">
                 <h3 className="text-lg font-bold text-slate-800 tracking-tight leading-none whitespace-nowrap overflow-hidden text-ellipsis">
@@ -230,10 +286,10 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm print-card flex flex-col justify-between min-h-[110px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Net Savings</span>
-                <div className={`p-2 rounded-xl shrink-0 ${netSavings >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
+                <div className={`p-2 rounded-xl shrink-0 print:hidden ${netSavings >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
                   <TrendingUp size={16} />
                 </div>
               </div>
@@ -244,10 +300,10 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between min-h-[125px] w-full">
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm print-card flex flex-col justify-between min-h-[110px] w-full">
               <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 truncate">Savings Rate</span>
-                <div className={`p-2 rounded-xl shrink-0 ${netSavings >= 0 ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}`}>
+                <div className={`p-2 rounded-xl shrink-0 print:hidden ${netSavings >= 0 ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}`}>
                   <Award size={16} />
                 </div>
               </div>
@@ -260,13 +316,13 @@ export default function Reports({ setIsSidebarOpen }) {
           </div>
 
           {/* GRAPHICS SECTION */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 print-avoid-break">
+            <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm print-card">
               <div className="flex items-center gap-2 mb-6">
-                <TrendingUp size={18} className="text-indigo-600" />
+                <TrendingUp size={18} className="text-indigo-600 print:hidden" />
                 <h2 className="text-base font-bold text-slate-800">Income vs Expense Trend</h2>
               </div>
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 {sanitizedTrends.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sanitizedTrends} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
@@ -285,7 +341,7 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col">
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm print-card flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-base font-bold text-slate-800">Financial Structure</h2>
                 <div className="flex bg-slate-100 p-1 rounded-xl print:hidden">
@@ -304,11 +360,11 @@ export default function Reports({ setIsSidebarOpen }) {
                 </div>
               </div>
 
-              <div className="h-[200px] w-full relative flex items-center justify-center">
+              <div className="h-[180px] w-full relative flex items-center justify-center">
                 {currentPieData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={currentPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={3} dataKey="value">
+                      <Pie data={currentPieData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={3} dataKey="value">
                         {currentPieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
@@ -339,16 +395,16 @@ export default function Reports({ setIsSidebarOpen }) {
           </div>
 
           {/* DETAIL ALOKASI DANA & SMART INSIGHTS */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print-avoid-break">
+            <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm print-card">
               <h2 className="text-base font-bold text-slate-800 mb-6">Detailed Category Breakdown</h2>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {sanitizedCategories.length > 0 ? (
                   sanitizedCategories.map((cat, idx) => {
                     const baseTotal = cat.type === 'expense' ? totalExpense : totalIncome;
                     const pct = baseTotal > 0 ? ((cat.value / baseTotal) * 100).toFixed(1) : 0;
                     return (
-                      <div key={idx} className="space-y-1.5">
+                      <div key={idx} className="space-y-1.5 print-avoid-break">
                         <div className="flex justify-between text-xs font-bold">
                           <div className="flex items-center gap-2">
                             <span className={`w-2 h-2 rounded-full ${cat.type === 'expense' ? 'bg-rose-500' : 'bg-blue-500'}`}></span>
@@ -376,30 +432,30 @@ export default function Reports({ setIsSidebarOpen }) {
               </div>
             </div>
 
-            {/* SMART INSIGHTS SECTION (REVISED DESIGN) */}
-            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col">
+            {/* SMART INSIGHTS SECTION */}
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm print-card flex flex-col">
               <div className="flex items-center gap-2 mb-6">
-                <Sparkles size={18} className="text-indigo-600" />
+                <Sparkles size={18} className="text-indigo-600 print:hidden" />
                 <h2 className="text-base font-bold text-slate-800">Smart Insights</h2>
               </div>
 
               <div className="space-y-3 flex-1">
                 {netSavings < 0 ? (
-                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3 print-avoid-break">
                     <span className="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
                       <strong className="text-slate-800">Defisit Terdeteksi:</strong> Pengeluaran Anda melebihi pendapatan sebesar <span className="font-bold text-rose-600">Rp {Math.abs(netSavings).toLocaleString('id-ID')}</span>. Pertimbangkan untuk meninjau alokasi pengeluaran.
                     </p>
                   </div>
                 ) : savingsRate < 20 ? (
-                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3 print-avoid-break">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
                       <strong className="text-slate-800">Rasio Tabungan Rendah:</strong> Tingkat menabung Anda saat ini (<span className="font-bold text-amber-600">{savingsRate}%</span>) masih di bawah target ideal 20%.
                     </p>
                   </div>
                 ) : (
-                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3 print-avoid-break">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
                       <strong className="text-slate-800">Kondisi Finansial Baik:</strong> Rasio menabung Anda mencapai <span className="font-bold text-emerald-600">{savingsRate}%</span>. Surplus ini dapat dialokasikan ke dana darurat atau investasi.
@@ -408,7 +464,7 @@ export default function Reports({ setIsSidebarOpen }) {
                 )}
 
                 {topExpenseCat && (
-                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3 print-avoid-break">
                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
                       Pengeluaran terbesar berada pada kategori <strong className="text-slate-800">"{topExpenseCat.name}"</strong> dengan akumulasi <strong className="text-slate-800">Rp {topExpenseCat.value.toLocaleString('id-ID')}</strong>.
@@ -417,7 +473,7 @@ export default function Reports({ setIsSidebarOpen }) {
                 )}
 
                 {totalExpense > 0 && (
-                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3">
+                  <div className="p-4 bg-slate-50/60 border border-slate-100 rounded-2xl flex items-start gap-3 print-avoid-break">
                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                     <p className="text-xs text-slate-600 leading-relaxed">
                       Rata-rata pengeluaran harian Anda dalam <strong className="text-slate-800">{totalDays} hari</strong> terakhir adalah sebesar <strong className="text-slate-800">Rp {Math.round(avgDailyExpense).toLocaleString('id-ID')}/hari</strong>.
