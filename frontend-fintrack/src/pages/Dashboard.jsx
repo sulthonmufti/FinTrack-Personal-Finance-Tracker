@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { LayoutDashboard, Plus, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import { Link } from 'react-router-dom';
@@ -48,14 +48,14 @@ export default function Dashboard({ setIsSidebarOpen }) {
     
     try {
       const [resTrans, resCats, resWallets] = await Promise.all([
-        axios.get('http://localhost:5000/api/transactions', {
+        api.get('/api/transactions', {
           headers: { Authorization: `Bearer ${token}` },
           params: { month: filterMonth, year: filterYear }
         }),
-        axios.get('http://localhost:5000/api/transactions/categories', {
+        api.get('/api/transactions/categories', {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get('http://localhost:5000/api/wallets', {
+        api.get('/api/wallets', {
           headers: { Authorization: `Bearer ${token}` },
         })
       ]);
@@ -82,7 +82,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
       const isExpense = selectedCategory?.type === 'expense';
       const finalAmount = isExpense ? parseInt(amount) * -1 : parseInt(amount);
 
-      await axios.post('http://localhost:5000/api/transactions', {
+      await api.post('/api/transactions', {
         amount: finalAmount,
         description,
         category_id: parseInt(categoryId),

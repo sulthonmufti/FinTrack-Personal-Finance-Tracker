@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { 
   FileText, Calendar, Wallet, TrendingUp, ArrowUpRight, 
   ArrowDownRight, Award, Sparkles, Download, Printer, RefreshCw
@@ -38,7 +38,7 @@ export default function Reports({ setIsSidebarOpen }) {
     const fetchWallets = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/wallets', {
+        const res = await api.get('/api/wallets', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setWallets(res.data.rows || res.data || []);
@@ -53,7 +53,7 @@ export default function Reports({ setIsSidebarOpen }) {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/reports', {
+      const res = await api.get('/api/reports', {
         headers: { Authorization: `Bearer ${token}` },
         params: { startDate, endDate, walletId }
       });

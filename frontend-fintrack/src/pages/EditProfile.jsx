@@ -2,7 +2,7 @@
 //DIGANTI DENGAN HALAMAN SETTINGS
 
 import { useState } from "react";
-import axios from "axios";
+import api from "../utils/api";
 import { User, Mail, Save, Lock, ShieldCheck } from "lucide-react";
 
 export default function Profile() {
@@ -33,7 +33,7 @@ export default function Profile() {
       setStatus({ type: '', msg: '' });
 
       try {
-          const response = await axios.put('http://localhost:5000/api/auth/update-profile', 
+          const response = await api.put('/api/auth/update-profile', 
               { username, email },
               { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -60,7 +60,7 @@ export default function Profile() {
       setStatus({ type: '', msg: '' });
 
       try {
-          const response = await axios.put('http://localhost:5000/api/auth/change-password', 
+          const response = await api.put('/api/auth/change-password', 
               { oldPassword, newPassword },
               { headers: { Authorization: `Bearer ${token}` } }
           );

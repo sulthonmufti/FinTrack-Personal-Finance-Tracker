@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { Plus, Wallet, ArrowRightLeft } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import ProfileHeader from '../components/ProfileHeader';
@@ -17,7 +17,7 @@ export default function Wallets({ setIsSidebarOpen }) {
     const fetchWallets = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/wallets', {
+            const res = await api.get('/api/wallets', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -53,9 +53,9 @@ export default function Wallets({ setIsSidebarOpen }) {
             const headers = { Authorization: `Bearer ${token}` };
 
             if (editingWallet) {
-                await axios.put(`http://localhost:5000/api/wallets/${editingWallet.id}`, formData, { headers });
+                await api.put(`/api/wallets/${editingWallet.id}`, formData, { headers });
             } else {
-                await axios.post('http://localhost:5000/api/wallets', formData, { headers });
+                await api.post('/api/wallets', formData, { headers });
             }
             setIsModalOpen(false);
             fetchWallets();
@@ -67,7 +67,7 @@ export default function Wallets({ setIsSidebarOpen }) {
     const handleTransferSubmit = async (transferData) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/wallets/transfer', transferData, {
+            await api.post('/api/wallets/transfer', transferData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setIsTransferModalOpen(false);
@@ -82,7 +82,7 @@ export default function Wallets({ setIsSidebarOpen }) {
         if (window.confirm("Apakah Anda yakin ingin menghapus dompet ini? Semua data transaksi terkait akan kehilangan referensi dompet.")) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://localhost:5000/api/wallets/${id}`, {
+                await api.delete(`/api/wallets/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 

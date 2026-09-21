@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { Search, Plus, CheckCircle2 } from 'lucide-react'; 
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import TransactionTable from "../components/TransactionTable";
@@ -73,8 +73,8 @@ export default function Transactions({ setIsSidebarOpen }) {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       const [resTrans, resCats] = await Promise.all([
-        axios.get('http://localhost:5000/api/transactions', { headers }),
-        axios.get('http://localhost:5000/api/transactions/categories', { headers })
+        api.get('/api/transactions', { headers }),
+        api.get('/api/transactions/categories', { headers })
       ]);
       setTransactions(resTrans.data);
       setCategories(resCats.data);
@@ -89,7 +89,7 @@ export default function Transactions({ setIsSidebarOpen }) {
   const fetchWallets = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/wallets', {
+      const res = await api.get('/api/wallets', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setWallets(res.data);
@@ -175,15 +175,15 @@ export default function Transactions({ setIsSidebarOpen }) {
           throw new Error("ID Transaksi yang akan diedit tidak ditemukan.");
         }
 
-        await axios.put(
-          `http://localhost:5000/api/transactions/${selectedTransaction.id}`, 
+        await api.put(
+          `/api/transactions/${selectedTransaction.id}`, 
           data, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
         showSuccessToast("Berhasil Diperbarui", "Data transaksi telah berhasil diubah.");
       } else {
-        await axios.post(
-          'http://localhost:5000/api/transactions', 
+        await api.post(
+          '/api/transactions', 
           data, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -337,7 +337,7 @@ export default function Transactions({ setIsSidebarOpen }) {
         onConfirm={async () => {
           try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/transactions/${selectedTransaction.id}`, {
+            await api.delete(`/api/transactions/${selectedTransaction.id}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             fetchData();

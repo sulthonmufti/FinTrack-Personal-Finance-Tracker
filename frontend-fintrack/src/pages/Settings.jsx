@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 
@@ -25,7 +25,7 @@ export default function Settings({ setIsSidebarOpen }) {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/transactions/categories', { headers });
+      const res = await api.get('/api/transactions/categories', { headers });
       setCategories(res.data);
     } catch (err) { console.error("Failed to fetch categories"); }
   };
@@ -39,7 +39,7 @@ export default function Settings({ setIsSidebarOpen }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await axios.put('http://localhost:5000/api/auth/update-profile', profile, { headers });
+      const res = await api.put('/api/auth/update-profile', profile, { headers });
       localStorage.setItem('user', JSON.stringify(res.data.user));
       triggerModal('success', 'Profile Updated', 'Information saved successfully.');
     } catch (err) {
@@ -55,7 +55,7 @@ export default function Settings({ setIsSidebarOpen }) {
     }
     setIsLoading(true);
     try {
-      await axios.put('http://localhost:5000/api/auth/change-password', {
+      await api.put('/api/auth/change-password', {
         oldPassword: passwords.oldPassword,
         newPassword: passwords.newPassword
       }, { headers });
@@ -71,7 +71,7 @@ export default function Settings({ setIsSidebarOpen }) {
     if (!newCatName) return;
     setIsLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/transactions/categories', 
+      await api.post('/api/transactions/categories', 
         { name: newCatName, type: newCatType }, 
         { headers }
       );
