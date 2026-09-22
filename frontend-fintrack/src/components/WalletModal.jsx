@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, Pipette } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatRupiah } from '../utils/formatters';
 
@@ -7,7 +7,12 @@ export const WALLET_THEMES = {
     slate: 'bg-slate-800',
     emerald: 'bg-emerald-600',
     purple: 'bg-gradient-to-br from-purple-600 to-indigo-700',
-    sunset: 'bg-gradient-to-br from-rose-500 to-orange-500'
+    sunset: 'bg-gradient-to-br from-rose-500 to-orange-500',
+    ocean: 'bg-gradient-to-br from-blue-600 to-cyan-500',
+    midnight: 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900',
+    amber: 'bg-gradient-to-br from-amber-500 to-yellow-600',
+    rose: 'bg-gradient-to-br from-rose-600 to-pink-500',
+    teal: 'bg-teal-600'
 };
 
 const AVAILABLE_COLORS = [
@@ -15,7 +20,12 @@ const AVAILABLE_COLORS = [
     { id: 'slate', name: 'Dark Slate' },
     { id: 'emerald', name: 'Emerald' },
     { id: 'purple', name: 'Purple Gradient' },
-    { id: 'sunset', name: 'Warm Sunset' }
+    { id: 'sunset', name: 'Warm Sunset' },
+    { id: 'ocean', name: 'Ocean Breeze' },
+    { id: 'midnight', name: 'Midnight' },
+    { id: 'amber', name: 'Golden Amber' },
+    { id: 'rose', name: 'Rose Pink' },
+    { id: 'teal', name: 'Teal Green' }
 ];
 
 export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
@@ -23,6 +33,8 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
     const [accountNumber, setAccountNumber] = useState('');
     const [balance, setBalance] = useState('');
     const [color, setColor] = useState('indigo');
+    const [customColor, setCustomColor] = useState('#4f46e5');
+    const [isCustom, setIsCustom] = useState(false);
 
     useEffect(() => {
         if (editData) {
@@ -31,12 +43,25 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
             setBalance(editData.balance ? formatRupiah(editData.balance.toString()) : '');
             
             const themeId = Object.keys(WALLET_THEMES).find(key => WALLET_THEMES[key] === editData.color) || editData.color;
-            setColor(themeId || 'indigo');
+            
+            if (WALLET_THEMES[themeId]) {
+                setColor(themeId);
+                setIsCustom(false);
+            } else if (editData.color?.startsWith('#')) {
+                setColor(editData.color);
+                setCustomColor(editData.color);
+                setIsCustom(true);
+            } else {
+                setColor(themeId || 'indigo');
+                setIsCustom(false);
+            }
         } else {
             setName('');
             setAccountNumber('');
             setBalance('');
             setColor('indigo');
+            setIsCustom(false);
+            setCustomColor('#4f46e5');
         }
     }, [editData, isOpen]);
 
@@ -45,6 +70,18 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
     const handleBalanceChange = (e) => {
         const rawValue = e.target.value.replace(/[^0-9]/g, '');
         setBalance(formatRupiah(rawValue));
+    };
+
+    const handleSelectPreset = (id) => {
+        setColor(id);
+        setIsCustom(false);
+    };
+
+    const handleCustomColorChange = (e) => {
+        const hex = e.target.value;
+        setCustomColor(hex);
+        setColor(hex);
+        setIsCustom(true);
     };
 
     const handleFormSubmit = (e) => {
@@ -101,17 +138,44 @@ export default function WalletModal({ isOpen, onClose, onSubmit, editData }) {
 
                     <div>
                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Card Theme</label>
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2.5 flex-wrap items-center">
                             {AVAILABLE_COLORS.map((col) => (
                                 <button
-                                    key={col.id} type="button" onClick={() => setColor(col.id)}
-                                    className={`w-10 h-10 rounded-xl transition-all ${WALLET_THEMES[col.id]} ${
-                                        color === col.id ? 'ring-4 ring-indigo-500/40 scale-110' : 'opacity-80 hover:opacity-100'
+                                    key={col.id} type="button" onClick={() => handleSelectPreset(col.id)}
+                                    className={`w-9 h-9 rounded-xl transition-all ${WALLET_THEMES[col.id]} ${
+                                        !isCustom && color === col.id ? 'ring-4 ring-indigo-500/40 scale-110' : 'opacity-80 hover:opacity-100'
                                     }`}
                                     title={col.name}
                                 />
                             ))}
+
+                            {/* Option Custom Color Picker */}
+                            <div className="relative flex items-center justify-center">
+                                <input
+                                    type="color"
+                                    id="customColorPicker"
+                                    value={customColor}
+                                    onChange={handleCustomColorChange}
+                                    className="sr-only"
+                                />
+                                <label
+                                    htmlFor="customColorPicker"
+                                    style={{ backgroundColor: isCustom ? customColor : undefined }}
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-slate-300 ${
+                                        isCustom ? 'ring-4 ring-indigo-500/40 scale-110 text-white border-solid border-transparent' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                    }`}
+                                    title="Custom Color"
+                                >
+                                    <Pipette size={16} />
+                                </label>
+                            </div>
                         </div>
+
+                        {isCustom && (
+                            <p className="text-[11px] text-slate-400 mt-2 font-medium">
+                                Warna Kustom: <span className="font-mono font-bold text-slate-600">{customColor}</span>
+                            </p>
+                        )}
                     </div>
 
                     <button type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] mt-2">

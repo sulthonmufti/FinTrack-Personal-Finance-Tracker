@@ -2,12 +2,13 @@ import { CreditCard, Trash2, Edit2 } from 'lucide-react';
 import { WALLET_THEMES } from './WalletModal';
 
 export default function WalletCard({ wallet, onSelect, isActive, onEdit, onDelete }) {
-
-    const cardBgClass = WALLET_THEMES[wallet.color] || wallet.color || 'bg-indigo-600';
+    const isHexColor = wallet.color?.startsWith('#');
+    const cardBgClass = isHexColor ? '' : (WALLET_THEMES[wallet.color] || wallet.color || 'bg-indigo-600');
 
     return (
         <div 
             onClick={() => onSelect(wallet)}
+            style={isHexColor ? { backgroundColor: wallet.color } : {}}
             className={`p-6 rounded-[2rem] text-white shadow-lg transition-all transform cursor-pointer relative overflow-hidden group ${cardBgClass} ${
                 isActive ? 'ring-4 ring-indigo-500/30 scale-[1.02]' : 'hover:scale-[1.01]'
             }`}
