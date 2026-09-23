@@ -1,4 +1,4 @@
-import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Settings, X, LogOut, UserRoundPen } from 'lucide-react'
+import { LayoutDashboard, Wallet, ArrowLeftRight, BarChart3, Target, Settings, X, LogOut } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
 const NavItem = ({ icon: Icon, label, to }) => (
@@ -6,29 +6,25 @@ const NavItem = ({ icon: Icon, label, to }) => (
     to={to}
     className={({ isActive }) => `
       flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-      ${isActive ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}
+      ${isActive ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-500 hover:bg-slate-100'}
     `}
   >
     <Icon size={20} />
     <span className="font-medium text-sm">{label}</span>
   </NavLink>
-)
+);
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Hapus semua data di storage
     localStorage.clear();
-    //Arahkan kembali ke halaman login
     navigate('/login');
-    //Paksa reload untuk memastikan state aplikasi bersih
     window.location.reload();
   };
 
   return (
     <>
-      {/* Sidebar Overlay untuk mobile */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden"
@@ -36,12 +32,10 @@ export default function Sidebar({ isOpen, onClose }) {
         ></div>
       )}
 
-      {/* Sidebar Content */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-[70] w-64 bg-white border-r border-slate-200 p-6 flex flex-col transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Logo Section */}
         <div className="flex items-center justify-between lg:justify-start gap-2 px-2 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">F</div>
@@ -52,16 +46,15 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Main Navigation */}
         <nav className="flex flex-col gap-1">
           <NavItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" />
           <NavItem icon={Wallet} label="Wallets" to="/wallets" />
           <NavItem icon={ArrowLeftRight} label="Transactions" to="/transactions" />
+          <NavItem icon={Target} label="Budgets" to="/budgets" />
           <NavItem icon={BarChart3} label="Reports" to="/reports" />
           <NavItem icon={Settings} label="Settings" to="/settings" />
         </nav>
 
-        {/* Tombol Logout di paling bawah */}
         <div className="mt-auto pt-4 border-t border-slate-100">
           <button 
             onClick={handleLogout}
@@ -73,5 +66,5 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
       </aside>
     </>
-  )
+  );
 }

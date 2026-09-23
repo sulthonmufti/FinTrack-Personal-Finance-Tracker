@@ -9,6 +9,7 @@ import Transactions from './pages/Transactions';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import Reports from './pages/Reports';
+import Budgets from './pages/Budgets';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -47,6 +48,7 @@ function App() {
               
               <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
               <Route path="/reports" element={isAuthenticated ? <Reports setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
+              <Route path="/budgets" element={isAuthenticated ? <Budgets setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
               
               <Route path="/settings" element={<Settings setIsSidebarOpen={setIsSidebarOpen} />} />
 
