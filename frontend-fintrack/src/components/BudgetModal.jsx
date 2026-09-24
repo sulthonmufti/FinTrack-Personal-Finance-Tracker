@@ -2,15 +2,29 @@ import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatRupiah } from '../utils/formatters';
 
-export default function BudgetModal({ isOpen, onClose, onSubmit, categories, currentMonth, currentYear }) {
+export default function BudgetModal({ isOpen, onClose, onSubmit, categories = [], currentMonth, currentYear }) {
     const [categoryId, setCategoryId] = useState('');
     const [amountLimit, setAmountLimit] = useState('');
 
+    // Filter fleksibel: Keluarkan yang bernilai pemasukan/income, sisanya anggap Pengeluaran
+    const expenseCategories = categories.filter((c) => {
+        if (!c.type) return true; // Jika type kosong/null, tetap tampilkan agar safe
+        const typeLower = String(c.type).toLowerCase().trim();
+        return typeLower !== 'income' && typeLower !== 'pemasukan' && typeLower !== 'in' && typeLower !== 'masuk';
+    });
+
     useEffect(() => {
-        if (categories.length > 0) {
-            setCategoryId(categories[0].id);
+        if (isOpen) {
+            console.log("=== DEBUG CATEGORIES AT MODAL ===", categories);
+            console.log("=== FILTERED EXPENSE CATEGORIES ===", expenseCategories);
+
+            if (expenseCategories.length > 0) {
+                setCategoryId(expenseCategories[0].id);
+            } else {
+                setCategoryId('');
+            }
+            setAmountLimit('');
         }
-        setAmountLimit('');
     }, [isOpen, categories]);
 
     if (!isOpen) return null;
@@ -23,6 +37,11 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
     const handleSubmit = (e) => {
         e.preventDefault();
         const numericAmount = parseFloat(amountLimit.replace(/\./g, '').replace(/,/g, '.') || 0);
+
+        if (!categoryId) {
+            alert("Silakan pilih kategori pengeluaran terlebih dahulu.");
+            return;
+        }
 
         onSubmit({
             category_id: categoryId,
@@ -44,21 +63,33 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Expense Category</label>
-                        <select 
-                            value={categoryId} 
-                            onChange={(e) => setCategoryId(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                            required
-                        >
-                            {categories.filter(c => c.type === 'expense').map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                            Expense Category
+                        </label>
+                        {expenseCategories.length === 0 ? (
+                            <p className="text-xs text-rose-500 font-medium bg-rose-50 p-3 rounded-xl border border-rose-100">
+                                Belum ada kategori pengeluaran. Tambahkan kategori pengeluaran terlebih dahulu di menu Transactions.
+                            </p>
+                        ) : (
+                            <select 
+                                value={categoryId} 
+                                onChange={(e) => setCategoryId(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                                required
+                            >
+                                {expenseCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name} {cat.type ? `(${cat.type})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Monthly Limit</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                            Monthly Limit
+                        </label>
                         <div className="relative flex items-center">
                             <span className="absolute left-4 text-slate-400 font-bold text-sm select-none">Rp</span>
                             <input 
@@ -68,11 +99,16 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-700 font-bold text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" 
                                 placeholder="0" 
                                 required
+                                disabled={expenseCategories.length === 0}
                             />
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] mt-3 text-sm">
+                    <button 
+                        type="submit" 
+                        disabled={expenseCategories.length === 0}
+                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] mt-3 text-sm"
+                    >
                         Save Budget Limit
                     </button>
                 </form>
