@@ -37,10 +37,7 @@ export default function Reports({ setIsSidebarOpen }) {
   useEffect(() => {
     const fetchWallets = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await api.get('/api/wallets', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get('/wallets');
         setWallets(res.data.rows || res.data || []);
       } catch (err) {
         console.error("Gagal memuat dompet:", err);
@@ -52,9 +49,7 @@ export default function Reports({ setIsSidebarOpen }) {
   const fetchReportDetails = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await api.get('/api/reports', {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get('/reports', {
         params: { startDate, endDate, walletId }
       });
       setReportData(res.data);
@@ -132,7 +127,6 @@ export default function Reports({ setIsSidebarOpen }) {
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.append;
     const linkEl = document.createElement('a');
     linkEl.setAttribute('href', url);
     linkEl.setAttribute('download', `Financial_Report_${startDate}_to_${endDate}.csv`);

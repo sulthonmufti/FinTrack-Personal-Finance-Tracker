@@ -57,7 +57,7 @@ export default function Budgets() {
         }
     };
 
-    // Filter budget yang melebihi limit untuk banner pemicu alert
+    // Filter budget yang melebihi limit untuk banner alert
     const exceededBudgets = budgets.filter(b => parseFloat(b.spent) >= parseFloat(b.amount_limit));
     const warningBudgets = budgets.filter(b => {
         const pct = (parseFloat(b.spent) / parseFloat(b.amount_limit)) * 100;
@@ -98,7 +98,7 @@ export default function Budgets() {
 
                     <button 
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition-all"
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition-all active:scale-95"
                     >
                         <Plus size={18} />
                         Set Budget
@@ -108,11 +108,11 @@ export default function Budgets() {
 
             {/* Alert Banner Section */}
             {exceededBudgets.length > 0 && (
-                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-start gap-3 text-rose-800 animate-fadeIn">
-                    <AlertCircle size={22} className="text-rose-600 shrink-0 mt-0.5" />
+                <div className="bg-rose-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-rose-200 animate-fadeIn">
+                    <AlertCircle size={22} className="shrink-0 mt-0.5 text-white" />
                     <div>
                         <h4 className="font-bold text-sm">Peringatan: Over Budget!</h4>
-                        <p className="text-xs text-rose-600 mt-0.5">
+                        <p className="text-xs text-rose-100 mt-0.5">
                             {exceededBudgets.length} kategori ({exceededBudgets.map(b => b.category_name).join(', ')}) telah melebihi batas anggaran yang ditentukan.
                         </p>
                     </div>
@@ -120,11 +120,11 @@ export default function Budgets() {
             )}
 
             {warningBudgets.length > 0 && exceededBudgets.length === 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 text-amber-800 animate-fadeIn">
-                    <AlertTriangle size={22} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="bg-amber-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-amber-200 animate-fadeIn">
+                    <AlertTriangle size={22} className="shrink-0 mt-0.5 text-white" />
                     <div>
                         <h4 className="font-bold text-sm">Perhatian: Mendekati Batas Budget</h4>
-                        <p className="text-xs text-amber-700 mt-0.5">
+                        <p className="text-xs text-amber-100 mt-0.5">
                             Kategori ({warningBudgets.map(b => b.category_name).join(', ')}) telah mencapai lebih dari 80% dari batas pengeluaran.
                         </p>
                     </div>
@@ -144,17 +144,18 @@ export default function Budgets() {
                         const percentage = Math.min(Math.round((spent / limit) * 100), 100);
                         const rawPercentage = ((spent / limit) * 100).toFixed(1);
 
-                        let statusColor = "bg-indigo-600";
-                        let badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                        // Pengaturan Warna Solid dan Shadow
+                        let statusColor = "bg-emerald-500";
+                        let badgeStyle = "bg-emerald-500 text-white shadow-sm shadow-emerald-200";
                         let IconBadge = CheckCircle2;
 
                         if (spent >= limit) {
-                            statusColor = "bg-rose-500";
-                            badgeStyle = "bg-rose-50 text-rose-700 border-rose-200";
+                            statusColor = "bg-rose-600";
+                            badgeStyle = "bg-rose-600 text-white shadow-sm shadow-rose-200";
                             IconBadge = AlertCircle;
                         } else if (rawPercentage >= 80) {
                             statusColor = "bg-amber-500";
-                            badgeStyle = "bg-amber-50 text-amber-700 border-amber-200";
+                            badgeStyle = "bg-amber-500 text-white shadow-sm shadow-amber-200";
                             IconBadge = AlertTriangle;
                         }
 
@@ -166,13 +167,15 @@ export default function Budgets() {
                                         <p className="text-xs text-slate-400 mt-0.5">Limit: Rp {limit.toLocaleString('id-ID')}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${badgeStyle}`}>
-                                            <IconBadge size={13} />
+                                        {/* Solid Badge Style */}
+                                        <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${badgeStyle}`}>
+                                            <IconBadge size={13} className="shrink-0" />
                                             {rawPercentage}%
                                         </span>
                                         <button 
                                             onClick={() => setDeleteId(item.id)}
-                                            className="text-slate-300 hover:text-rose-500 p-1 transition-colors"
+                                            className="text-slate-300 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition-colors ml-1"
+                                            title="Hapus Budget"
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -187,8 +190,8 @@ export default function Budgets() {
                                             style={{ width: `${percentage}%` }}
                                         />
                                     </div>
-                                    <div className="flex justify-between items-center text-xs mt-2 font-medium">
-                                        <span className="text-slate-500">Terpakai: <strong className="text-slate-700">Rp {spent.toLocaleString('id-ID')}</strong></span>
+                                    <div className="flex justify-between items-center text-xs mt-2.5 font-medium">
+                                        <span className="text-slate-500">Terpakai: <strong className="text-slate-800">Rp {spent.toLocaleString('id-ID')}</strong></span>
                                         <span className={spent >= limit ? "text-rose-600 font-bold" : "text-slate-400"}>
                                             {spent >= limit ? "Over Budget" : `Sisa: Rp ${(limit - spent).toLocaleString('id-ID')}`}
                                         </span>

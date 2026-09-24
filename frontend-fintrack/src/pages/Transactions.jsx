@@ -69,12 +69,10 @@ export default function Transactions({ setIsSidebarOpen }) {
     : [];
 
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
     try {
       const [resTrans, resCats] = await Promise.all([
-        api.get('/api/transactions', { headers }),
-        api.get('/api/transactions/categories', { headers })
+        api.get('/transactions'),
+        api.get('/transactions/categories')
       ]);
       setTransactions(resTrans.data);
       setCategories(resCats.data);
@@ -88,10 +86,7 @@ export default function Transactions({ setIsSidebarOpen }) {
 
   const fetchWallets = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await api.get('/api/wallets', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/wallets');
       setWallets(res.data);
     } catch (err) {
       console.error("Gagal mengambil data dompet untuk modal:", err);
@@ -162,7 +157,6 @@ export default function Transactions({ setIsSidebarOpen }) {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
       const data = {
         amount: activeTab === 'expense' ? -Math.abs(parseInt(amount)) : Math.abs(parseInt(amount)),
         description,
@@ -175,18 +169,10 @@ export default function Transactions({ setIsSidebarOpen }) {
           throw new Error("ID Transaksi yang akan diedit tidak ditemukan.");
         }
 
-        await api.put(
-          `/api/transactions/${selectedTransaction.id}`, 
-          data, 
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.put(`/transactions/${selectedTransaction.id}`, data);
         showSuccessToast("Berhasil Diperbarui", "Data transaksi telah berhasil diubah.");
       } else {
-        await api.post(
-          '/api/transactions', 
-          data, 
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.post('/transactions', data);
         showSuccessToast("Berhasil Ditambahkan", "Transaksi baru telah berhasil dicatat.");
       }
 
@@ -336,10 +322,7 @@ export default function Transactions({ setIsSidebarOpen }) {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
           try {
-            const token = localStorage.getItem('token');
-            await api.delete(`/api/transactions/${selectedTransaction.id}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/transactions/${selectedTransaction.id}`);
             fetchData();
             setIsDeleteModalOpen(false);
             

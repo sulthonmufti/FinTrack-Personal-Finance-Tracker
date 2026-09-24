@@ -44,20 +44,13 @@ export default function Dashboard({ setIsSidebarOpen }) {
   const [walletId, setWalletId] = useState('');
 
   const fetchInitialData = async () => {
-    const token = localStorage.getItem('token');
-    
     try {
       const [resTrans, resCats, resWallets] = await Promise.all([
-        api.get('/api/transactions', {
-          headers: { Authorization: `Bearer ${token}` },
+        api.get('/transactions', {
           params: { month: filterMonth, year: filterYear }
         }),
-        api.get('/api/transactions/categories', {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        api.get('/api/wallets', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        api.get('/transactions/categories'),
+        api.get('/wallets')
       ]);
 
       setTransactions(resTrans.data);
@@ -76,20 +69,17 @@ export default function Dashboard({ setIsSidebarOpen }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
       // Jika kategori bertipe 'expense', kalikan dengan -1 agar menjadi negatif
       const isExpense = selectedCategory?.type === 'expense';
       const finalAmount = isExpense ? parseInt(amount) * -1 : parseInt(amount);
 
-      await api.post('/api/transactions', {
+      await api.post('/transactions', {
         amount: finalAmount,
         description,
         category_id: parseInt(categoryId),
         wallet_id: walletId && walletId !== '' ? Number(walletId) : null,
         transaction_date: transactionDate
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       // Reset Form & Tutup Modal

@@ -14,9 +14,6 @@ export default function Settings({ setIsSidebarOpen }) {
   const [newCatType, setNewCatType] = useState('expense');
   const [isLoading, setIsLoading] = useState(false);
 
-  const token = localStorage.getItem('token');
-  const headers = { Authorization: `Bearer ${token}` };
-
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     setProfile({ username: userData.username || '', email: userData.email || '' });
@@ -25,9 +22,11 @@ export default function Settings({ setIsSidebarOpen }) {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/api/transactions/categories', { headers });
+      const res = await api.get('/transactions/categories');
       setCategories(res.data);
-    } catch (err) { console.error("Failed to fetch categories"); }
+    } catch (err) { 
+      console.error("Failed to fetch categories"); 
+    }
   };
 
   const triggerModal = (type, title, message) => {
@@ -39,12 +38,14 @@ export default function Settings({ setIsSidebarOpen }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await api.put('/api/auth/update-profile', profile, { headers });
+      const res = await api.put('/auth/update-profile', profile);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       triggerModal('success', 'Profile Updated', 'Information saved successfully.');
     } catch (err) {
       triggerModal('error', 'Update Failed', 'Email might already be in use.');
-    } finally { setIsLoading(false); }
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const handleChangePassword = async (e) => {
@@ -55,15 +56,17 @@ export default function Settings({ setIsSidebarOpen }) {
     }
     setIsLoading(true);
     try {
-      await api.put('/api/auth/change-password', {
+      await api.put('/auth/change-password', {
         oldPassword: passwords.oldPassword,
         newPassword: passwords.newPassword
-      }, { headers });
+      });
       setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });
       triggerModal('success', 'Success', 'Password has been updated.');
     } catch (err) {
       triggerModal('error', 'Failed', 'Current password is incorrect.');
-    } finally { setIsLoading(false); }
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const handleAddCategory = async (e) => {
@@ -71,16 +74,15 @@ export default function Settings({ setIsSidebarOpen }) {
     if (!newCatName) return;
     setIsLoading(true);
     try {
-      await api.post('/api/transactions/categories', 
-        { name: newCatName, type: newCatType }, 
-        { headers }
-      );
+      await api.post('/transactions/categories', { name: newCatName, type: newCatType });
       setNewCatName('');
       fetchCategories();
       triggerModal('success', 'Added', 'New category created.');
     } catch (err) {
       triggerModal('error', 'Failed', 'Could not add category.');
-    } finally { setIsLoading(false); }
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const expenseCategories = categories.filter(cat => cat.type === 'expense');

@@ -16,11 +16,8 @@ export default function Wallets({ setIsSidebarOpen }) {
 
     const fetchWallets = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await api.get('/api/wallets', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
+            // Cukup panggil /wallets (tanpa /api dan tanpa manual headers)
+            const res = await api.get('/wallets');
             const walletData = res.data.rows || res.data || [];
             
             setWallets(walletData);
@@ -49,13 +46,10 @@ export default function Wallets({ setIsSidebarOpen }) {
 
     const handleFormSubmit = async (formData) => {
         try {
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
             if (editingWallet) {
-                await api.put(`/api/wallets/${editingWallet.id}`, formData, { headers });
+                await api.put(`/wallets/${editingWallet.id}`, formData);
             } else {
-                await api.post('/api/wallets', formData, { headers });
+                await api.post('/wallets', formData);
             }
             setIsModalOpen(false);
             fetchWallets();
@@ -66,10 +60,7 @@ export default function Wallets({ setIsSidebarOpen }) {
 
     const handleTransferSubmit = async (transferData) => {
         try {
-            const token = localStorage.getItem('token');
-            await api.post('/api/wallets/transfer', transferData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('/wallets/transfer', transferData);
             setIsTransferModalOpen(false);
             fetchWallets();
         } catch (err) {
@@ -81,10 +72,7 @@ export default function Wallets({ setIsSidebarOpen }) {
     const handleDeleteWallet = async (id) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus dompet ini? Semua data transaksi terkait akan kehilangan referensi dompet.")) {
             try {
-                const token = localStorage.getItem('token');
-                await api.delete(`/api/wallets/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.delete(`/wallets/${id}`);
                 
                 if (selectedWallet?.id === id) {
                     setSelectedWallet(null);

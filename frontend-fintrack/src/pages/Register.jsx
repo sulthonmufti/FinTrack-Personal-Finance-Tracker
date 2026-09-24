@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { User, Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 
@@ -10,7 +10,6 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleRegister = async (e) => {
@@ -31,7 +30,7 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      const res = await api.post('/api/auth/register', {
+      const res = await api.post('/auth/register', {
         username,
         email,
         password
