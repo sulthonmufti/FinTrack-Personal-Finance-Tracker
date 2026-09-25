@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import API from '../utils/api';
-import { Plus, AlertTriangle, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
+import { Plus, AlertTriangle, AlertCircle, CheckCircle2, Trash2, Pencil } from 'lucide-react';
 import BudgetModal from '../components/BudgetModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
@@ -9,6 +9,7 @@ export default function Budgets() {
     const [categories, setCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
+    const [editingBudget, setEditingBudget] = useState(null); // State untuk simpan data budget yang sedang diedit
     
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -36,10 +37,17 @@ export default function Budgets() {
         }
     };
 
-    const handleCreateBudget = async (data) => {
+    // Fungsi Gabungan untuk Tambah & Edit
+    const handleSaveBudget = async (data) => {
         try {
-            await API.post('/budgets', data);
-            setIsModalOpen(false);
+            if (editingBudget) {
+                // Endpoint Update Budget (PUT)
+                await API.put(`/budgets/${editingBudget.id}`, data);
+            } else {
+                // Endpoint Create Budget (POST)
+                await API.post('/budgets', data);
+            }
+            handleCloseModal();
             fetchBudgets();
         } catch (err) {
             console.error("Failed to save budget", err);
@@ -57,7 +65,21 @@ export default function Budgets() {
         }
     };
 
-    // Filter budget yang melebihi limit untuk banner alert
+    const handleOpenCreateModal = () => {
+        setEditingBudget(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (budget) => {
+        setEditingBudget(budget);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingBudget(null);
+    };
+
     const exceededBudgets = budgets.filter(b => parseFloat(b.spent) >= parseFloat(b.amount_limit));
     const warningBudgets = budgets.filter(b => {
         const pct = (parseFloat(b.spent) / parseFloat(b.amount_limit)) * 100;
@@ -97,7 +119,7 @@ export default function Budgets() {
                     </select>
 
                     <button 
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={handleOpenCreateModal}
                         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition-all active:scale-95"
                     >
                         <Plus size={18} />
@@ -108,19 +130,19 @@ export default function Budgets() {
 
             {/* Alert Banner Section */}
             {exceededBudgets.length > 0 && (
-                <div className="bg-rose-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-rose-200 animate-fadeIn">
+                <div className="bg-rose-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-rose-200">
                     <AlertCircle size={22} className="shrink-0 mt-0.5 text-white" />
                     <div>
                         <h4 className="font-bold text-sm">Peringatan: Over Budget!</h4>
                         <p className="text-xs text-rose-100 mt-0.5">
-                            {exceededBudgets.length} kategori ({exceededBudgets.map(b => b.category_name).join(', ')}) telah melebihi batas anggaran yang ditentukan.
+                            {exceededBudgets.length} kategori ({exceededBudgets.map(b => b.category_name).join(', ')}) telah melebihi batas anggaran.
                         </p>
                     </div>
                 </div>
             )}
 
             {warningBudgets.length > 0 && exceededBudgets.length === 0 && (
-                <div className="bg-amber-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-amber-200 animate-fadeIn">
+                <div className="bg-amber-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-amber-200">
                     <AlertTriangle size={22} className="shrink-0 mt-0.5 text-white" />
                     <div>
                         <h4 className="font-bold text-sm">Perhatian: Mendekati Batas Budget</h4>
@@ -131,7 +153,7 @@ export default function Budgets() {
                 </div>
             )}
 
-            {/* Grid Progress Budget Cards */}
+            {/* Grid Budget Cards */}
             {budgets.length === 0 ? (
                 <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm">
                     <p className="text-slate-400 font-medium text-sm">Belum ada batas anggaran yang diatur untuk bulan ini.</p>
@@ -144,7 +166,6 @@ export default function Budgets() {
                         const percentage = Math.min(Math.round((spent / limit) * 100), 100);
                         const rawPercentage = ((spent / limit) * 100).toFixed(1);
 
-                        // Pengaturan Warna Solid dan Shadow
                         let statusColor = "bg-emerald-500";
                         let badgeStyle = "bg-emerald-500 text-white shadow-sm shadow-emerald-200";
                         let IconBadge = CheckCircle2;
@@ -166,18 +187,29 @@ export default function Budgets() {
                                         <h3 className="font-bold text-slate-800 text-base">{item.category_name}</h3>
                                         <p className="text-xs text-slate-400 mt-0.5">Limit: Rp {limit.toLocaleString('id-ID')}</p>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {/* Solid Badge Style */}
+                                    
+                                    <div className="flex items-center gap-1.5">
                                         <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${badgeStyle}`}>
                                             <IconBadge size={13} className="shrink-0" />
                                             {rawPercentage}%
                                         </span>
+
+                                        {/* Tombol Edit */}
+                                        <button 
+                                            onClick={() => handleOpenEditModal(item)}
+                                            className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-xl hover:bg-indigo-50 transition-colors ml-1"
+                                            title="Edit Budget"
+                                        >
+                                            <Pencil size={15} />
+                                        </button>
+
+                                        {/* Tombol Hapus */}
                                         <button 
                                             onClick={() => setDeleteId(item.id)}
-                                            className="text-slate-300 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition-colors ml-1"
+                                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition-colors"
                                             title="Hapus Budget"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={15} />
                                         </button>
                                     </div>
                                 </div>
@@ -203,16 +235,18 @@ export default function Budgets() {
                 </div>
             )}
 
-            {/* Modals */}
+            {/* Modal Budget */}
             <BudgetModal 
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={handleCreateBudget}
+                onClose={handleCloseModal}
+                onSubmit={handleSaveBudget}
                 categories={categories}
                 currentMonth={selectedMonth}
                 currentYear={selectedYear}
+                editData={editingBudget} // Direct prop untuk pre-fill data
             />
 
+            {/* Modal Konfirmasi Hapus */}
             <DeleteConfirmModal 
                 isOpen={!!deleteId}
                 onClose={() => setDeleteId(null)}

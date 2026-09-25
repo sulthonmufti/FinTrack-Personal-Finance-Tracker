@@ -98,4 +98,37 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Endpoint untuk Update Budget Limit berdasarkan ID
+router.put("/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount_limit } = req.body;
+    const userId = req.user.id;
+
+    if (!amount_limit) {
+      return res.status(400).json({ message: "Batas anggaran harus diisi." });
+    }
+
+    const numericLimit = parseFloat(amount_limit);
+
+    const queryText = `
+      UPDATE budgets 
+      SET amount_limit = $1
+      WHERE id = $2 AND user_id = $3
+      RETURNING *
+    `;
+
+    const result = await pool.query(queryText, [numericLimit, id, userId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Data budget tidak ditemukan." });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error updating budget:", err.message);
+    res.status(500).send("Gagal memperbarui batas anggaran");
+  }
+});
+
 module.exports = router;
