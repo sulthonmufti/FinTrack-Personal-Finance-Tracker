@@ -6,13 +6,19 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
     const [categoryId, setCategoryId] = useState('');
     const [displayAmount, setDisplayAmount] = useState('');
 
+    // Filter hanya kategori yang berjenis 'expense' atau 'pengeluaran'
+    const expenseCategories = categories.filter(
+        (cat) => cat.type?.toLowerCase() === 'expense' || cat.type?.toLowerCase() === 'pengeluaran'
+    );
+
     useEffect(() => {
         if (editData) {
             setCategoryId(editData.category_id || '');
             const rawLimit = editData.amount_limit ? Math.round(parseFloat(editData.amount_limit)) : '';
             setDisplayAmount(rawLimit ? formatRupiah(rawLimit) : '');
         } else {
-            setCategoryId(categories.length > 0 ? categories[0].id : '');
+            // Set default pilihan ke kategori pengeluaran pertama
+            setCategoryId(expenseCategories.length > 0 ? expenseCategories[0].id : '');
             setDisplayAmount('');
         }
     }, [editData, isOpen, categories]);
@@ -56,7 +62,7 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
                             disabled={!!editData}
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
                         >
-                            {categories.map((cat) => (
+                            {expenseCategories.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
                                 </option>
