@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { formatRupiah } from '../utils/formatters';
 
 export default function BudgetModal({ isOpen, onClose, onSubmit, categories, currentMonth, currentYear, editData }) {
     const [categoryId, setCategoryId] = useState('');
-    const [amountLimit, setAmountLimit] = useState('');
+    const [displayAmount, setDisplayAmount] = useState('');
 
     useEffect(() => {
         if (editData) {
-            // Mode Edit: Isi form dengan data yang ada
             setCategoryId(editData.category_id || '');
-            setAmountLimit(editData.amount_limit || '');
+            const rawLimit = editData.amount_limit ? Math.round(parseFloat(editData.amount_limit)) : '';
+            setDisplayAmount(rawLimit ? formatRupiah(rawLimit) : '');
         } else {
-            // Mode Tambah Baru: Reset form
             setCategoryId(categories.length > 0 ? categories[0].id : '');
-            setAmountLimit('');
+            setDisplayAmount('');
         }
     }, [editData, isOpen, categories]);
 
     if (!isOpen) return null;
 
+    const handleAmountChange = (e) => {
+        const rawValue = e.target.value;
+        setDisplayAmount(formatRupiah(rawValue));
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        const rawAmount = displayAmount.replace(/[^0-9]/g, '');
         onSubmit({
             category_id: categoryId,
-            amount_limit: amountLimit,
+            amount_limit: rawAmount,
             month: currentMonth,
             year: currentYear
         });
@@ -47,7 +53,7 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
                         <select 
                             value={categoryId} 
                             onChange={(e) => setCategoryId(e.target.value)}
-                            disabled={!!editData} // Kategori umumnya di-lock saat edit
+                            disabled={!!editData}
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
                         >
                             {categories.map((cat) => (
@@ -59,15 +65,18 @@ export default function BudgetModal({ isOpen, onClose, onSubmit, categories, cur
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Batas Anggaran (Rp)</label>
-                        <input 
-                            type="number"
-                            placeholder="Contoh: 1500000"
-                            value={amountLimit}
-                            onChange={(e) => setAmountLimit(e.target.value)}
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Batas Anggaran</label>
+                        <div className="relative flex items-center">
+                            <span className="absolute left-4 text-sm font-bold text-slate-400">Rp</span>
+                            <input 
+                                type="text"
+                                placeholder="1.500.000"
+                                value={displayAmount}
+                                onChange={handleAmountChange}
+                                required
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex gap-3 pt-2">
