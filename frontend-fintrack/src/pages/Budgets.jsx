@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import API from '../utils/api';
 import { Plus, AlertTriangle, AlertCircle, CheckCircle2, Trash2, Pencil } from 'lucide-react';
+import { HiOutlineMenuAlt2 } from "react-icons/hi";
+import ProfileHeader from '../components/ProfileHeader';
 import BudgetModal from '../components/BudgetModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
-export default function Budgets() {
+export default function Budgets({ setIsSidebarOpen }) {
     const [budgets, setBudgets] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
-    const [editingBudget, setEditingBudget] = useState(null); // State untuk simpan data budget yang sedang diedit
+    const [editingBudget, setEditingBudget] = useState(null);
     
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -37,14 +39,11 @@ export default function Budgets() {
         }
     };
 
-    // Fungsi Gabungan untuk Tambah & Edit
     const handleSaveBudget = async (data) => {
         try {
             if (editingBudget) {
-                // Endpoint Update Budget (PUT)
                 await API.put(`/budgets/${editingBudget.id}`, data);
             } else {
-                // Endpoint Create Budget (POST)
                 await API.post('/budgets', data);
             }
             handleCloseModal();
@@ -87,48 +86,68 @@ export default function Budgets() {
     });
 
     return (
-        <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-            {/* Header & Month Selector */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Budget Limits & Alerts</h1>
-                    <p className="text-slate-500 text-sm">Kelola batas pengeluaran bulanan per kategori.</p>
+        <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+            {/* HEADER RESPONSIF */}
+            <header className="space-y-4 mb-6">
+                {/* Baris Atas: Sidebar Toggle, Judul, & Profile */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={() => setIsSidebarOpen && setIsSidebarOpen(true)}
+                            className="lg:hidden p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 active:scale-90 transition-all shadow-sm"
+                        >
+                            <HiOutlineMenuAlt2 size={22} />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Budget Limits</h1>
+                            <p className="text-slate-500 text-xs hidden sm:block">Kelola batas pengeluaran bulanan per kategori</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <ProfileHeader />
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <select 
-                        value={selectedMonth} 
-                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                        className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none"
-                    >
-                        {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                                {new Date(0, i).toLocaleString('id-ID', { month: 'long' })}
-                            </option>
-                        ))}
-                    </select>
+                {/* Baris Filter & Tombol Aksi */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Select Bulan & Tahun Split 50-50 di Mobile */}
+                    <div className="grid grid-cols-2 gap-2.5 sm:w-auto">
+                        <select 
+                            value={selectedMonth} 
+                            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                            {Array.from({ length: 12 }, (_, i) => (
+                                <option key={i + 1} value={i + 1}>
+                                    {new Date(0, i).toLocaleString('id-ID', { month: 'long' })}
+                                </option>
+                            ))}
+                        </select>
 
-                    <select 
-                        value={selectedYear} 
-                        onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:outline-none"
-                    >
-                        {[2025, 2026, 2027].map(yr => (
-                            <option key={yr} value={yr}>{yr}</option>
-                        ))}
-                    </select>
+                        <select 
+                            value={selectedYear} 
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                            {[2025, 2026, 2027].map(yr => (
+                                <option key={yr} value={yr}>{yr}</option>
+                            ))}
+                        </select>
+                    </div>
 
+                    {/* Tombol Set Budget Full Width di Mobile */}
                     <button 
                         onClick={handleOpenCreateModal}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition-all active:scale-95"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-indigo-100 transition-all active:scale-95"
                     >
                         <Plus size={18} />
-                        Set Budget
+                        <span>Set Budget</span>
                     </button>
                 </div>
-            </div>
+            </header>
 
-            {/* Alert Banner Section */}
+            {/* ALERT BANNER SECTION */}
             {exceededBudgets.length > 0 && (
                 <div className="bg-rose-500 text-white rounded-2xl p-4 flex items-start gap-3 shadow-md shadow-rose-200">
                     <AlertCircle size={22} className="shrink-0 mt-0.5 text-white" />
@@ -153,7 +172,7 @@ export default function Budgets() {
                 </div>
             )}
 
-            {/* Grid Budget Cards */}
+            {/* GRID BUDGET CARDS */}
             {budgets.length === 0 ? (
                 <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm">
                     <p className="text-slate-400 font-medium text-sm">Belum ada batas anggaran yang diatur untuk bulan ini.</p>
@@ -194,7 +213,6 @@ export default function Budgets() {
                                             {rawPercentage}%
                                         </span>
 
-                                        {/* Tombol Edit */}
                                         <button 
                                             onClick={() => handleOpenEditModal(item)}
                                             className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-xl hover:bg-indigo-50 transition-colors ml-1"
@@ -203,7 +221,6 @@ export default function Budgets() {
                                             <Pencil size={15} />
                                         </button>
 
-                                        {/* Tombol Hapus */}
                                         <button 
                                             onClick={() => setDeleteId(item.id)}
                                             className="text-slate-400 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition-colors"
@@ -214,7 +231,6 @@ export default function Budgets() {
                                     </div>
                                 </div>
 
-                                {/* Progress Bar */}
                                 <div>
                                     <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
                                         <div 
@@ -235,7 +251,7 @@ export default function Budgets() {
                 </div>
             )}
 
-            {/* Modal Budget */}
+            {/* MODAL BUDGET */}
             <BudgetModal 
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
@@ -243,10 +259,10 @@ export default function Budgets() {
                 categories={categories}
                 currentMonth={selectedMonth}
                 currentYear={selectedYear}
-                editData={editingBudget} // Direct prop untuk pre-fill data
+                editData={editingBudget}
             />
 
-            {/* Modal Konfirmasi Hapus */}
+            {/* MODAL KONFIRMASI HAPUS */}
             <DeleteConfirmModal 
                 isOpen={!!deleteId}
                 onClose={() => setDeleteId(null)}
