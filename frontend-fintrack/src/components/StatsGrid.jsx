@@ -107,7 +107,7 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
             <div className="bg-indigo-600 p-6 md:p-8 rounded-[2rem] shadow-xl shadow-indigo-100 text-white relative overflow-hidden flex flex-col justify-between group">
                 <div className="relative z-10">
                     <p className="opacity-70 text-[10px] font-bold tracking-widest uppercase">Transaction Trend</p>
-                    <p className="text-xs opacity-90 mt-1 font-medium">Last 7 transactions</p>
+                    <p className="text-xs opacity-90 mt-1 font-medium">Last 7 Days</p>
                 </div>
                 
                 {/* Wadah Grafik */}
@@ -123,7 +123,7 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
                                 </defs>
                                 <Tooltip
                                     formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
-                                    labelFormatter={(label, items) => items[0]?.payload?.name || label}
+                                    labelFormatter={(label) => label}
                                     contentStyle={{ 
                                         backgroundColor: '#1e293b', 
                                         borderRadius: '12px', 

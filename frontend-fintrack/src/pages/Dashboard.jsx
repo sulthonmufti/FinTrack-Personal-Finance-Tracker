@@ -132,14 +132,33 @@ export default function Dashboard({ setIsSidebarOpen }) {
     value: categoryTotals[key]
   }));
 
-  // 6. Format data untuk AreaChart Tren (Membalikkan data dari terlama ke terbaru)
-  const chartData = transactions
-    .slice(0, 7)
-    .map(t => ({
-      name: t.description.substring(0, 10),
-      amount: parseFloat(t.amount)
-    }))
-    .reverse();
+  // 6. Format data untuk AreaChart Tren (7 Hari Terakhir)
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d;
+  });
+
+  const chartData = last7Days.map(date => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const formattedKey = `${yyyy}-${mm}-${dd}`;
+
+    const dayTransactions = transactions.filter(t => {
+      if (!t.transaction_date) return false;
+      const tDateStr = t.transaction_date.split('T')[0];
+      return tDateStr === formattedKey;
+    });
+
+    const dayTotal = dayTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const label = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+    return {
+      name: label,
+      amount: dayTotal
+    };
+  });
   
   // Urutkan seluruh transaksi berdasarkan tanggal dan ID
   const sortedTransactions = [...transactions].sort((a, b) => {
@@ -156,7 +175,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
   });
 
   // Ambil 5 transaksi terbaru dari hasil urutan
-const recentTransactions = sortedTransactions.slice(0, 5);
+  const recentTransactions = sortedTransactions.slice(0, 5);
 
   //hitung presentase perbandingan bulan lalu
   const calculateBalanceComparison = () => {
