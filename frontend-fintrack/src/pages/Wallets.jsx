@@ -90,36 +90,47 @@ export default function Wallets({ setIsSidebarOpen }) {
     return (
         <>
             {/* Header Area */}
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 lg:hidden transition-all">
-                        <HiOutlineMenuAlt2 size={24} />
-                    </button>
+            <header className="space-y-4 mb-8">
+                {/* Baris Atas: Menu Toggle, Judul, & ProfileHeader di Pojok Kanan */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)} 
+                            className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 lg:hidden transition-all"
+                        >
+                            <HiOutlineMenuAlt2 size={24} />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                                <Wallet className="text-indigo-600" size={28} /> My Wallets
+                            </h1>
+                            <p className="text-xs md:text-sm font-medium text-slate-400 mt-0.5">
+                                Total gabungan saldo: <span className="font-bold text-indigo-600">Rp {totalAccumulatedBalance.toLocaleString('id-ID')}</span>
+                            </p>
+                        </div>
+                    </div>
+
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                            <Wallet className="text-indigo-600" size={28} /> My Wallets
-                        </h1>
-                        <p className="text-xs md:text-sm font-medium text-slate-400 mt-0.5">
-                            Total gabungan saldo: <span className="font-bold text-indigo-600">Rp {totalAccumulatedBalance.toLocaleString('id-ID')}</span>
-                        </p>
+                        <ProfileHeader />
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
+                {/* Baris Aksi: Tombol Transfer & Add Wallet */}
+                <div className="flex items-center justify-end gap-3">
                     {wallets.length >= 2 && (
                         <button 
                             onClick={() => setIsTransferModalOpen(true)} 
-                            className="flex items-center justify-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all active:scale-95"
+                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all active:scale-95"
                         >
                             <ArrowRightLeft size={16} /> Transfer
                         </button>
                     )}
-                    <button onClick={handleOpenAddModal} className="flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-indigo-100 active:scale-95">
+                    <button 
+                        onClick={handleOpenAddModal} 
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-indigo-100 active:scale-95"
+                    >
                         <Plus size={16} /> Add Wallet
                     </button>
-                    <div className="border-l border-slate-200 pl-2">
-                        <ProfileHeader />
-                    </div>
                 </div>
             </header>
 
