@@ -174,4 +174,37 @@ router.put("/change-password", authenticateToken, async (req, res) => {
   }
 });
 
+// Endpoint Reset Password dengan Validasi Email & Username
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, username, newPassword } = req.body;
+
+    const user = await pool.query(
+      "SELECT * FROM users WHERE email = $1 AND username = $2",
+      [email, username],
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(400).json({
+        message:
+          "Kombinasi Email dan Username tidak cocok atau tidak terdaftar!",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [
+      hashedPassword,
+      user.rows[0].id,
+    ]);
+
+    res.json({
+      message: "Password berhasil diperbarui. Silakan login kembali.",
+    });
+  } catch (err) {
+    console.error("Reset Password Error:", err.message);
+    res.status(500).json({ message: "Terjadi kesalahan pada server" });
+  }
+});
+
 module.exports = router;

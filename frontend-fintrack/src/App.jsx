@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword'; // <--- Import
 import Dashboard from './pages/Dashboard';
 import Wallets from './pages/Wallets';
 import EditProfile from './pages/EditProfile';
@@ -33,26 +34,21 @@ function App() {
         <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative">
           <div className="p-4 md:p-8 max-w-[1440px] w-full mx-auto">
             <Routes>
-              {/* ----- Public Routes: Bisa diakses siapa saja -----*/}
-              {/* Login Page */}
+              {/* Public Routes */}
               <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-              {/* Register */}
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} /> {/* <--- Route Baru */}
 
-              {/* ----- Protected Routes ------*/}
+              {/* Protected Routes */}
               <Route path="/dashboard" element={isAuthenticated ? <Dashboard setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
-              
               <Route path="/transactions" element={isAuthenticated ? <Transactions setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
-              
               <Route path="/wallets" element={isAuthenticated ? <Wallets setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
-              
               <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
               <Route path="/reports" element={isAuthenticated ? <Reports setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
               <Route path="/budgets" element={isAuthenticated ? <Budgets setIsSidebarOpen={setIsSidebarOpen} /> : <Navigate to="/login" />} />
-              
               <Route path="/settings" element={<Settings setIsSidebarOpen={setIsSidebarOpen} />} />
 
-              {/* Catch-all Route diletakkan paling bawah */}
+              {/* Catch-all Route */}
               <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
             </Routes>
           </div>

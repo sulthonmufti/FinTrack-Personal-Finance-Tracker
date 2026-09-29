@@ -21,12 +21,11 @@ export default function Login() {
         password
       });
 
-      // Simpan token dan data user ke localStorage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
       navigate('/dashboard');
-      window.location.reload(); // Refresh untuk update state global/sidebar
+      window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || "Login gagal. Periksa kembali email dan password Anda.");
     } finally {
@@ -56,9 +55,17 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 ml-1">
-              Password
-            </label>
+            <div className="flex justify-between items-center mb-2 ml-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                Password
+              </label>
+              <Link 
+                to="/forgot-password" 
+                className="text-xs font-bold text-indigo-600 hover:underline transition-all"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input 
               type="password" 
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
