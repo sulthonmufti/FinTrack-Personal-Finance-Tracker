@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const pool = require("../config/db"); // Import koneksi DB dari folder config
-const authenticateToken = require("../middleware/authMiddleware"); // Import middleware
+const pool = require("../config/db");
+const authenticateToken = require("../middleware/authMiddleware");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Endpoint Register dengan Kategori Default
+// Endpoint Register dengan Kategori Default & Default Wallet CASH
 router.post("/register", async (req, res) => {
   const client = await pool.connect();
   try {
@@ -26,17 +26,17 @@ router.post("/register", async (req, res) => {
 
     await client.query("BEGIN");
 
-    //hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    //buat user baru
+    // Buat user baru
     const userRes = await client.query(
       "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id",
       [username, email, hashedPassword],
     );
     const newUserId = userRes.rows[0].id;
 
-    //kategori Default untuk User Baru
+    // 1. Kategori Default untuk User Baru
     const defaultCategories = [
       ["Gaji", "income", newUserId],
       ["Makanan", "expense", newUserId],
@@ -49,11 +49,19 @@ router.post("/register", async (req, res) => {
       );
     }
 
+    // 2. Default Wallet "CASH" (Warna Grey / bg-slate-500)
+    await client.query(
+      "INSERT INTO wallets (name, account_number, balance, color, user_id) VALUES ($1, $2, $3, $4, $5)",
+      ["CASH", "-", 0, "bg-slate-500", newUserId],
+    );
+
     await client.query("COMMIT");
-    //buat token setelah proses register berhasil
+
+    // Buat token setelah proses register berhasil
     const token = jwt.sign({ id: newUserId, username: username }, JWT_SECRET, {
       expiresIn: "24h",
     });
+
     res.status(201).json({
       message: "User berhasil terdaftar",
       token,
@@ -107,13 +115,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-//Endpoint untuk Update Profile + autentikasi (endpointnya /api/auth/update-profile sudah tidak di gunakan lagi)
+// Endpoint Update Profile
 router.put("/update-profile", authenticateToken, async (req, res) => {
   try {
-    const { id, username, email } = req.body;
-    const userId = req.user.id; // Gunakan ID dari token, bukan dari body agar lebih aman
+    const { username, email } = req.body;
+    const userId = req.user.id;
 
-    //Jalankan Query Update
     const updatedUser = await pool.query(
       "UPDATE users SET username = $1, email = $2 WHERE id = $3 RETURNING id, username, email",
       [username, email, userId],
@@ -123,7 +130,6 @@ router.put("/update-profile", authenticateToken, async (req, res) => {
       return res.status(404).json({ message: "User tidak ditemukan" });
     }
 
-    // 2. Kirim data yang sudah diperbarui kembali ke frontend
     res.json({
       message: "Profil berhasil diperbarui",
       user: updatedUser.rows[0],
@@ -136,18 +142,16 @@ router.put("/update-profile", authenticateToken, async (req, res) => {
   }
 });
 
-//endpoint change password + autentikasi (endpointnya /api/auth/change-password sudah tidak di gunakan lagi)
+// Endpoint Change Password
 router.put("/change-password", authenticateToken, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
     const userId = req.user.id;
 
-    //ambil password lama (verifikasi)
     const user = await pool.query("SELECT password FROM users WHERE id = $1", [
       userId,
     ]);
 
-    //cek password lama cocok
     const validPassword = await bcrypt.compare(
       oldPassword,
       user.rows[0].password,
@@ -156,10 +160,8 @@ router.put("/change-password", authenticateToken, async (req, res) => {
       return res.status(401).json({ message: "Password lama salah!" });
     }
 
-    //hash password baru
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    //update ke database
     await pool.query("UPDATE users SET password = $1 WHERE id = $2", [
       hashedNewPassword,
       userId,
