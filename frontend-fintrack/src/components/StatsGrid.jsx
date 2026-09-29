@@ -1,10 +1,10 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis } from 'recharts';
 
 export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, chartMode, setChartMode, showBalances, toggleBalanceButton, comparisonData }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center relative min-h-[140px]"> 
-                {/* button hide */}
+            {/* Card Total Balance */}
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center relative min-h-[140px] min-w-0"> 
                 <div className="absolute top-5 right-5 z-10">
                     {toggleBalanceButton}
                 </div>
@@ -23,17 +23,14 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
                         }`}>
                             {comparisonData.isIncrease ? '↑' : '↓'} {comparisonData.percentage}%
                         </span>
-                        {/* <span className="text-slate-400 text-[11px]">
-                            dari bulan lalu
-                        </span> */}
                     </div>
                 )}
             </div>
 
-            {/* Pie Chart Card dengan Fitur Switch Mode */}
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm col-span-1 md:col-span-2 flex flex-col sm:flex-row items-center gap-4 hover:border-indigo-100 transition-all">
-                <div className="w-full sm:w-1/2">
-                    <ResponsiveContainer width="100%" height={160}>
+            {/* Pie Chart Card */}
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm col-span-1 md:col-span-2 flex flex-col sm:flex-row items-center gap-4 hover:border-indigo-100 transition-all min-w-0">
+                <div className="w-full sm:w-1/2 min-w-0">
+                    <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                         <PieChart>
                             <Pie 
                                 data={pieData} 
@@ -54,9 +51,8 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
                     </ResponsiveContainer>
                 </div>
                 
-                <div className="w-full sm:w-1/2 flex flex-col justify-between h-full py-1">
+                <div className="w-full sm:w-1/2 flex flex-col justify-between h-full py-1 min-w-0">
                     <div>
-                        {/* ui switch mode expense dan income */}
                         <div className="flex bg-slate-100 p-1 rounded-xl mb-3 border border-slate-200/40">
                             <button
                                 onClick={() => setChartMode('expense')}
@@ -85,7 +81,6 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
                         </h3>
                     </div>
 
-                    {/* Legend List Kategori */}
                     <div className="grid grid-cols-2 sm:grid-cols-1 gap-x-3 gap-y-2 max-h-[100px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                         {pieData.length === 0 ? (
                             <span className="text-xs text-slate-400 italic col-span-2 sm:col-span-1 py-1 px-1 bg-slate-50 rounded-lg">
@@ -104,16 +99,16 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
             </div>
 
             {/* Transaction Trend Card (AreaChart Recharts) */}
-            <div className="bg-indigo-600 p-6 md:p-8 rounded-[2rem] shadow-xl shadow-indigo-100 text-white relative overflow-hidden flex flex-col justify-between group">
+            <div className="bg-indigo-600 p-6 md:p-8 rounded-[2rem] shadow-xl shadow-indigo-100 text-white relative overflow-hidden flex flex-col justify-between group min-w-0">
                 <div className="relative z-10">
                     <p className="opacity-70 text-[10px] font-bold tracking-widest uppercase">Transaction Trend</p>
                     <p className="text-xs opacity-90 mt-1 font-medium">Last 7 Days</p>
                 </div>
                 
                 {/* Wadah Grafik */}
-                <div className="h-24 w-full mt-4 -mb-3 -mx-2 relative z-10 transition-transform group-hover:scale-105 duration-500">
+                <div className="h-24 w-full mt-4 -mb-3 -mx-2 relative z-10 transition-transform group-hover:scale-105 duration-500 min-w-0">
                     {chartData && chartData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -121,9 +116,11 @@ export default function StatsGrid({ totalBalance, pieData, chartData, COLORS, ch
                                         <stop offset="95%" stopColor="#ffffff" stopOpacity={0.0}/>
                                     </linearGradient>
                                 </defs>
+                                {/* Menggunakan dataKey="name" sesuai struktur dari Dashboard.jsx */}
+                                <XAxis dataKey="name" hide />
                                 <Tooltip
-                                    formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
-                                    labelFormatter={(label) => label}
+                                    formatter={(value) => [`Rp ${value.toLocaleString('id-ID')}`, 'Amount']}
+                                    labelFormatter={(label) => `Tanggal: ${label}`}
                                     contentStyle={{ 
                                         backgroundColor: '#1e293b', 
                                         borderRadius: '12px', 

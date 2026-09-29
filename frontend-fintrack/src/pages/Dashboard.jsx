@@ -8,27 +8,35 @@ import StatsGrid from "../components/StatsGrid";
 import TransactionTable from "../components/TransactionTable";
 import ProfileHeader from '../components/ProfileHeader';
 
+// Helper untuk format tanggal YYYY-MM-DD berdasarkan waktu lokal
+const formatLocalDate = (dateInput) => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function Dashboard({ setIsSidebarOpen }) {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // State untuk Form Modal
+  // State untuk Form Modal (Menggunakan waktu lokal)
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(1);
-  const [transactionDate, setTransactionDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [transactionDate, setTransactionDate] = useState(() => formatLocalDate(new Date()));
 
-  // State untuk Filter Global Dashboard (Default: 'All')
+  // State untuk Filter Global Dashboard
   const [filterMonth, setFilterMonth] = useState('All');
   const [filterYear, setFilterYear] = useState('All');
 
   const months = [
-    { val: 'All', name: 'All Months' }, // 2. Kembalikan pilihan All Months
+    { val: 'All', name: 'All Months' },
     { val: '01', name: 'Januari' }, { val: '02', name: 'Februari' },
     { val: '03', name: 'Maret' }, { val: '04', name: 'April' },
     { val: '05', name: 'Mei' }, { val: '06', name: 'Juni' },
@@ -37,7 +45,7 @@ export default function Dashboard({ setIsSidebarOpen }) {
     { val: '11', name: 'November' }, { val: '12', name: 'Desember' }
   ];
 
-  const years = ['All', '2024', '2025', '2026', '2027', '2028']; // Tambahkan 'All' untuk tahun
+  const years = ['All', '2024', '2025', '2026', '2027', '2028'];
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   const [wallets, setWallets] = useState([]);
@@ -70,7 +78,6 @@ export default function Dashboard({ setIsSidebarOpen }) {
     setIsLoading(true);
     try {
       const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
-      // Jika kategori bertipe 'expense', kalikan dengan -1 agar menjadi negatif
       const isExpense = selectedCategory?.type === 'expense';
       const finalAmount = isExpense ? parseInt(amount) * -1 : parseInt(amount);
 
@@ -82,7 +89,6 @@ export default function Dashboard({ setIsSidebarOpen }) {
         transaction_date: transactionDate
       });
 
-      // Reset Form & Tutup Modal
       setIsModalOpen(false);
       setDescription('');
       setAmount('');
@@ -96,43 +102,36 @@ export default function Dashboard({ setIsSidebarOpen }) {
     }
   };
 
-  //state hide saldo
   const [showBalances, setShowBalances] = useState(() => {
     const saved = localStorage.getItem('showBalances');
     return saved !== null ? JSON.parse(saved) : false;
   });
 
-  // Efek untuk menyimpan status mata setiap kali di-klik
   useEffect(() => {
     localStorage.setItem('showBalances', JSON.stringify(showBalances));
   }, [showBalances]);
 
-  // 1. state untuk switch mode expense dan income
   const [chartMode, setChartMode] = useState('expense'); 
 
-  // 2. Logika Kalkulasi Total Saldo
   const totalBalance = transactions.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
 
-  // 3. Filter transaksi berdasarkan mode aktif (expense / income)
   const filteredPieTransactions = transactions.filter(t => {
     const amt = parseFloat(t.amount);
     return chartMode === 'expense' ? amt < 0 : amt > 0;
   });
 
-  // 4. Akumulasikan total per kategori dari data yang sudah difilter
   const categoryTotals = filteredPieTransactions.reduce((acc, curr) => {
     const catName = curr.category || 'Uncategorized';
     acc[catName] = (acc[catName] || 0) + Math.abs(parseFloat(curr.amount));
     return acc;
   }, {});
 
-  // 5. Format data untuk Recharts Pie
   const pieData = Object.keys(categoryTotals).map(key => ({
     name: key,
     value: categoryTotals[key]
   }));
 
-  // 6. Format data untuk AreaChart Tren (7 Hari Terakhir)
+  // Format data untuk AreaChart Tren (7 Hari Terakhir)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -140,15 +139,12 @@ export default function Dashboard({ setIsSidebarOpen }) {
   });
 
   const chartData = last7Days.map(date => {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const formattedKey = `${yyyy}-${mm}-${dd}`;
+    const formattedKey = formatLocalDate(date);
 
+    // Pencocokan menggunakan formatLocalDate agar konsisten dengan waktu lokal
     const dayTransactions = transactions.filter(t => {
       if (!t.transaction_date) return false;
-      const tDateStr = t.transaction_date.split('T')[0];
-      return tDateStr === formattedKey;
+      return formatLocalDate(t.transaction_date) === formattedKey;
     });
 
     const dayTotal = dayTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
@@ -160,24 +156,18 @@ export default function Dashboard({ setIsSidebarOpen }) {
     };
   });
   
-  // Urutkan seluruh transaksi berdasarkan tanggal dan ID
   const sortedTransactions = [...transactions].sort((a, b) => {
     const dateA = new Date(a.transaction_date);
     const dateB = new Date(b.transaction_date);
     
-    // Jika tanggal berbeda, urutkan berdasarkan tanggal terbaru
     if (dateB - dateA !== 0) {
       return dateB - dateA;
     }
-    
-    // Jika tanggal sama, urutkan berdasarkan ID terbesar/terbaru
     return b.id - a.id; 
   });
 
-  // Ambil 5 transaksi terbaru dari hasil urutan
   const recentTransactions = sortedTransactions.slice(0, 5);
 
-  //hitung presentase perbandingan bulan lalu
   const calculateBalanceComparison = () => {
     const today = new Date();
     const currentMonth = (typeof filterMonth !== 'undefined' && filterMonth !== 'All') ? parseInt(filterMonth) - 1 : today.getMonth();
@@ -239,13 +229,11 @@ export default function Dashboard({ setIsSidebarOpen }) {
               </div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-                {/* Tombol Toggle Hide/Show Nominal */}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3 self-end sm:self-auto">
-            {/* UI Dropdown Filter Global */}
             <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200/60 shadow-sm">
               <select
                 value={filterMonth}
@@ -277,7 +265,6 @@ export default function Dashboard({ setIsSidebarOpen }) {
               <Plus size={16} /> <span className="hidden sm:inline">Add Transaction</span>
             </button>
 
-            {/* 1. KEMBALIKAN ProfileHeader di Pojok Kanan Atas */}
             <div className="border-l border-slate-200 pl-2">
               <ProfileHeader />
             </div>
