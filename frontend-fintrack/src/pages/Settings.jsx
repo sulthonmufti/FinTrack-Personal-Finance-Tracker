@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle, 
+  ChevronLeft, ChevronRight, Trash2, AlertTriangle 
+} from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 
 export default function Settings({ setIsSidebarOpen }) {
   const [activeTab, setActiveTab] = useState('profile');
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({ type: 'success', title: '', message: '' });
+  
+  // State untuk Konfirmasi Hapus Kategori
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [profile, setProfile] = useState({ username: '', email: '' });
   const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [categories, setCategories] = useState([]);
@@ -87,6 +95,23 @@ export default function Settings({ setIsSidebarOpen }) {
       triggerModal('error', 'Failed', 'Could not add category.');
     } finally { 
       setIsLoading(false); 
+    }
+  };
+
+  // Handler Hapus Kategori
+  const handleDeleteCategory = async () => {
+    if (!deleteModal.id) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/transactions/categories/${deleteModal.id}`);
+      setDeleteModal({ open: false, id: null, name: '' });
+      fetchCategories();
+      triggerModal('success', 'Berhasil', 'Kategori telah dihapus dan transaksi terkait dipindahkan ke Uncategorized.');
+    } catch (err) {
+      setDeleteModal({ open: false, id: null, name: '' });
+      triggerModal('error', 'Gagal', err.response?.data?.message || 'Gagal menghapus kategori.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -230,9 +255,18 @@ export default function Settings({ setIsSidebarOpen }) {
                       <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pengeluaran.</p>
                     ) : (
                       paginatedExpense.map((cat) => (
-                        <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                        <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-slate-200 transition-all">
                           <span className="text-sm font-bold text-slate-700">{cat.name}</span>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">Expense</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">Expense</span>
+                            <button
+                              onClick={() => setDeleteModal({ open: true, id: cat.id, name: cat.name })}
+                              className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                              title="Hapus Kategori"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
@@ -280,9 +314,18 @@ export default function Settings({ setIsSidebarOpen }) {
                       <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pemasukan.</p>
                     ) : (
                       paginatedIncome.map((cat) => (
-                        <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                        <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-slate-200 transition-all">
                           <span className="text-sm font-bold text-slate-700">{cat.name}</span>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Income</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Income</span>
+                            <button
+                              onClick={() => setDeleteModal({ open: true, id: cat.id, name: cat.name })}
+                              className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                              title="Hapus Kategori"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
@@ -320,7 +363,38 @@ export default function Settings({ setIsSidebarOpen }) {
         )}
       </div>
 
-      {/* Modal Feedback */}
+      {/* Modal Konfirmasi Hapus */}
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setDeleteModal({ open: false, id: null, name: '' })}></div>
+          <div className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl text-center animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={40} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Hapus Kategori?</h3>
+            <p className="text-slate-500 mb-6 text-xs leading-relaxed">
+              Kategori <strong className="text-slate-700">"{deleteModal.name}"</strong> akan dihapus. Transaksi yang terikat dengan kategori ini akan dialihkan ke <span className="font-semibold text-slate-700">Uncategorized</span>.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setDeleteModal({ open: false, id: null, name: '' })} 
+                className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleDeleteCategory} 
+                disabled={isDeleting}
+                className="flex-1 py-3.5 bg-rose-600 text-white rounded-2xl font-bold text-sm hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? <Loader2 className="animate-spin" size={18} /> : 'Ya, Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Feedback General (Success/Error) */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowModal(false)}></div>

@@ -3,16 +3,19 @@ const router = express.Router();
 const pool = require("../config/db");
 const authenticateToken = require("../middleware/authMiddleware");
 
-// 1. Ambil semua transaksi user
+// 1. Ambil semua transaksi user (Sudah disesuaikan agar transaksi NULL tetap muncul)
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { month, year } = req.query;
 
     let queryText = `
-      SELECT t.*, c.name AS category, c.type, w.name AS wallet_name
+      SELECT t.*, 
+             COALESCE(c.name, 'Uncategorized') AS category, 
+             COALESCE(c.type, 'expense') AS type, 
+             w.name AS wallet_name
       FROM transactions t
-      JOIN categories c ON t.category_id = c.id
+      LEFT JOIN categories c ON t.category_id = c.id
       LEFT JOIN wallets w ON t.wallet_id = w.id
       WHERE t.user_id = $1
     `;
@@ -52,6 +55,45 @@ router.get("/categories", authenticateToken, async (req, res) => {
   }
 });
 
+// 5b. HAPUS KATEGORI (Set transaksi terkait menjadi NULL/Uncategorized)
+router.delete("/categories/:id", authenticateToken, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    await client.query("BEGIN");
+
+    const catCheck = await client.query(
+      "SELECT * FROM categories WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+
+    if (catCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Kategori tidak ditemukan." });
+    }
+
+    await client.query(
+      "UPDATE transactions SET category_id = NULL WHERE category_id = $1 AND user_id = $2",
+      [id, userId],
+    );
+    await client.query(
+      "DELETE FROM categories WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+
+    await client.query("COMMIT");
+    res.json({ message: "Kategori berhasil dihapus." });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Delete Category Error:", err.message);
+    res.status(500).send("Gagal menghapus kategori");
+  } finally {
+    client.release();
+  }
+});
+
 // 3. TAMBAH TRANSAKSI (Dengan Validasi Kecukupan Saldo)
 router.post("/", authenticateToken, async (req, res) => {
   const client = await pool.connect();
@@ -80,12 +122,10 @@ router.post("/", authenticateToken, async (req, res) => {
       // Jika nominal bernilai minus (pengeluaran) dan saldo kurang, cegah transaksi
       if (currentBalance + numericAmount < 0) {
         await client.query("ROLLBACK");
-        return res
-          .status(400)
-          .json({
-            message:
-              "Saldo dompet tidak mencukupi untuk melakukan transaksi ini.",
-          });
+        return res.status(400).json({
+          message:
+            "Saldo dompet tidak mencukupi untuk melakukan transaksi ini.",
+        });
       }
 
       // Update saldo dompet
@@ -223,12 +263,10 @@ router.put("/:id", authenticateToken, async (req, res) => {
 
       if (availableBalance + newAmount < 0) {
         await client.query("ROLLBACK");
-        return res
-          .status(400)
-          .json({
-            message:
-              "Saldo dompet tidak mencukupi untuk pembaruan transaksi ini.",
-          });
+        return res.status(400).json({
+          message:
+            "Saldo dompet tidak mencukupi untuk pembaruan transaksi ini.",
+        });
       }
 
       // Terapkan penyesuaian nominal baru ke dompet target
