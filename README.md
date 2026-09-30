@@ -33,18 +33,18 @@ FinTrack is a full-stack personal finance tracking application designed to help 
 
 ## Tech Stack
 
-| Category       | Technology                                |
-| :------------- | :---------------------------------------- |
-| Frontend       | React.js 19 (Vite 8), Tailwind CSS 4.0   |
-| Navigation     | React Router DOM 7                        |
-| Charts         | Recharts 3                                |
-| Icons          | Lucide React, React Icons (HiOutline)     |
-| HTTP Client    | Axios                                     |
-| Backend        | Node.js, Express.js 5                     |
-| Authentication | JSON Web Token (JWT), Bcrypt              |
-| Database       | PostgreSQL (pg 8)                         |
-| Environment    | Dotenv, CORS                              |
-| API Testing    | Postman / Insomnia                        |
+| Category       | Technology                             |
+| :------------- | :------------------------------------- |
+| Frontend       | React.js 19 (Vite 8), Tailwind CSS 4.0 |
+| Navigation     | React Router DOM 7                     |
+| Charts         | Recharts 3                             |
+| Icons          | Lucide React, React Icons (HiOutline)  |
+| HTTP Client    | Axios                                  |
+| Backend        | Node.js, Express.js 5                  |
+| Authentication | JSON Web Token (JWT), Bcrypt           |
+| Database       | PostgreSQL (pg 8)                      |
+| Environment    | Dotenv, CORS                           |
+| API Testing    | Postman / Insomnia                     |
 
 ---
 
@@ -109,38 +109,38 @@ FinTrack/
 
 ### Authentication (`/api/auth`)
 
-| Method | Endpoint                      | Auth | Description                                    |
-| :----- | :---------------------------- | :--- | :--------------------------------------------- |
-| POST   | `/api/auth/register`          | No   | Register new user (auto-creates default categories & returns JWT) |
-| POST   | `/api/auth/login`             | No   | Login and receive JWT token                    |
-| PUT    | `/api/auth/update-profile`    | Yes  | Update username and email                      |
-| PUT    | `/api/auth/change-password`   | Yes  | Change password (requires old password verification) |
+| Method | Endpoint                    | Auth | Description                                                       |
+| :----- | :-------------------------- | :--- | :---------------------------------------------------------------- |
+| POST   | `/api/auth/register`        | No   | Register new user (auto-creates default categories & returns JWT) |
+| POST   | `/api/auth/login`           | No   | Login and receive JWT token                                       |
+| PUT    | `/api/auth/update-profile`  | Yes  | Update username and email                                         |
+| PUT    | `/api/auth/change-password` | Yes  | Change password (requires old password verification)              |
 
 ### Transactions (`/api/transactions`)
 
-| Method | Endpoint                       | Auth | Description                                        |
-| :----- | :----------------------------- | :--- | :------------------------------------------------- |
-| GET    | `/api/transactions`            | Yes  | Get all transactions (supports `?month=` & `?year=` query filters) |
-| POST   | `/api/transactions`            | Yes  | Create transaction (auto-syncs wallet balance via DB transaction) |
+| Method | Endpoint                       | Auth | Description                                                           |
+| :----- | :----------------------------- | :--- | :-------------------------------------------------------------------- |
+| GET    | `/api/transactions`            | Yes  | Get all transactions (supports `?month=` & `?year=` query filters)    |
+| POST   | `/api/transactions`            | Yes  | Create transaction (auto-syncs wallet balance via DB transaction)     |
 | PUT    | `/api/transactions/:id`        | Yes  | Edit transaction (cross-wallet balance adjustment via DB transaction) |
-| DELETE | `/api/transactions/:id`        | Yes  | Delete transaction (auto-reverses wallet balance via DB transaction) |
-| GET    | `/api/transactions/categories` | Yes  | Get all user-scoped categories                     |
-| POST   | `/api/transactions/categories` | Yes  | Create a new custom category                       |
+| DELETE | `/api/transactions/:id`        | Yes  | Delete transaction (auto-reverses wallet balance via DB transaction)  |
+| GET    | `/api/transactions/categories` | Yes  | Get all user-scoped categories                                        |
+| POST   | `/api/transactions/categories` | Yes  | Create a new custom category                                          |
 
 ### Wallets (`/api/wallets`)
 
-| Method | Endpoint                    | Auth | Description                                        |
-| :----- | :-------------------------- | :--- | :------------------------------------------------- |
-| GET    | `/api/wallets`              | Yes  | Get all wallets for the authenticated user         |
-| POST   | `/api/wallets`              | Yes  | Create wallet (auto-creates initial balance transaction via DB transaction) |
-| POST   | `/api/wallets/transfer`     | Yes  | Transfer funds between two wallets (atomic DB transaction with balance validation) |
-| PUT    | `/api/wallets/:id`          | Yes  | Update wallet details (name, account number, card theme) |
-| DELETE | `/api/wallets/:id`          | Yes  | Delete a wallet                                    |
+| Method | Endpoint                | Auth | Description                                                                        |
+| :----- | :---------------------- | :--- | :--------------------------------------------------------------------------------- |
+| GET    | `/api/wallets`          | Yes  | Get all wallets for the authenticated user                                         |
+| POST   | `/api/wallets`          | Yes  | Create wallet (auto-creates initial balance transaction via DB transaction)        |
+| POST   | `/api/wallets/transfer` | Yes  | Transfer funds between two wallets (atomic DB transaction with balance validation) |
+| PUT    | `/api/wallets/:id`      | Yes  | Update wallet details (name, account number, card theme)                           |
+| DELETE | `/api/wallets/:id`      | Yes  | Delete a wallet                                                                    |
 
 ### Reports (`/api/reports`)
 
-| Method | Endpoint       | Auth | Description                                                   |
-| :----- | :------------- | :--- | :------------------------------------------------------------ |
+| Method | Endpoint       | Auth | Description                                                                                                                                 |
+| :----- | :------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------------ |
 | GET    | `/api/reports` | Yes  | Get financial report data — summary, category breakdown & daily trends. Requires `?startDate=` & `?endDate=`. Optional `?walletId=` filter. |
 
 ---
@@ -183,7 +183,7 @@ CREATE TABLE transactions (
     amount DECIMAL(15,2) NOT NULL,
     description TEXT,
     transaction_date DATE DEFAULT CURRENT_DATE,
-    category_id INT REFERENCES categories(id) ON DELETE CASCADE,
+    category_id INT REFERENCES categories(id) ON DELETE SET NULL,
     wallet_id INT REFERENCES wallets(id) ON DELETE SET NULL,
     user_id INT REFERENCES users(id) ON DELETE CASCADE
 );
@@ -195,15 +195,15 @@ CREATE TABLE transactions (
 
 ## Application Pages
 
-| Page           | Route            | Status      | Description                                                     |
-| :------------- | :--------------- | :---------- | :-------------------------------------------------------------- |
-| Login          | `/login`         | ✅ Done      | User authentication with email & password                       |
-| Register       | `/register`      | ✅ Done      | New account creation with success modal & auto-redirect         |
-| Dashboard      | `/dashboard`     | ✅ Done      | Financial overview with stats, pie chart, area chart & recent transactions |
-| Wallets        | `/wallets`       | ✅ Done      | Wallet card grid with total balance, add/edit/delete & inter-wallet transfer |
-| Transactions   | `/transactions`  | ✅ Done      | Full transaction list with search, multi-filter & pagination    |
-| Reports        | `/reports`       | ✅ Done      | Financial report with date/wallet filters, bar & pie charts, category breakdown, smart insights, CSV export & print |
-| Settings       | `/settings`      | ✅ Done      | Profile info, password change & category management (tabbed UI) |
+| Page         | Route           | Status  | Description                                                                                                         |
+| :----------- | :-------------- | :------ | :------------------------------------------------------------------------------------------------------------------ |
+| Login        | `/login`        | ✅ Done | User authentication with email & password                                                                           |
+| Register     | `/register`     | ✅ Done | New account creation with success modal & auto-redirect                                                             |
+| Dashboard    | `/dashboard`    | ✅ Done | Financial overview with stats, pie chart, area chart & recent transactions                                          |
+| Wallets      | `/wallets`      | ✅ Done | Wallet card grid with total balance, add/edit/delete & inter-wallet transfer                                        |
+| Transactions | `/transactions` | ✅ Done | Full transaction list with search, multi-filter & pagination                                                        |
+| Reports      | `/reports`      | ✅ Done | Financial report with date/wallet filters, bar & pie charts, category breakdown, smart insights, CSV export & print |
+| Settings     | `/settings`     | ✅ Done | Profile info, password change & category management (tabbed UI)                                                     |
 
 ---
 
@@ -260,6 +260,7 @@ sudo -u postgres psql -c "CREATE DATABASE fintrack_db;"
 ```
 
 > **Linux note:** If the `postgres` user password hasn't been set yet, set it first:
+>
 > ```bash
 > sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'your_password';"
 > ```
@@ -368,6 +369,7 @@ nodemon index.js
 The server will start at `http://localhost:5000`.
 
 > **Linux note:** If you get a permission error on port 5000, make sure no other process is using it:
+>
 > ```bash
 > sudo lsof -i :5000
 > ```
@@ -385,6 +387,7 @@ npm run dev
 The application will be accessible at `http://localhost:5173`.
 
 > **Linux note:** If you cloned or moved this project from Windows, run the following once to fix line ending differences (CRLF → LF) that cause all files to appear as modified in Git:
+>
 > ```bash
 > git config core.autocrlf input
 > git rm --cached -r .
@@ -395,7 +398,7 @@ The application will be accessible at `http://localhost:5173`.
 
 Backend and frontend must run simultaneously in **separate terminals**:
 
-| Terminal | Command | URL |
-| :------- | :------ | :-- |
+| Terminal   | Command                                   | URL                     |
+| :--------- | :---------------------------------------- | :---------------------- |
 | Terminal 1 | `cd backend-fintrack && nodemon index.js` | `http://localhost:5000` |
-| Terminal 2 | `cd frontend-fintrack && npm run dev` | `http://localhost:5173` |
+| Terminal 2 | `cd frontend-fintrack && npm run dev`     | `http://localhost:5173` |
