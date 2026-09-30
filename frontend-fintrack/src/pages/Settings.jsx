@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 
 export default function Settings({ setIsSidebarOpen }) {
@@ -13,6 +13,11 @@ export default function Settings({ setIsSidebarOpen }) {
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState('expense');
   const [isLoading, setIsLoading] = useState(false);
+
+  // State untuk Pagination Kategori
+  const [expensePage, setExpensePage] = useState(1);
+  const [incomePage, setIncomePage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -85,8 +90,23 @@ export default function Settings({ setIsSidebarOpen }) {
     }
   };
 
+  // Filter Kategori
   const expenseCategories = categories.filter(cat => cat.type === 'expense');
   const incomeCategories = categories.filter(cat => cat.type === 'income');
+
+  // Kalkulasi Pagination Expense
+  const totalExpensePages = Math.ceil(expenseCategories.length / ITEMS_PER_PAGE) || 1;
+  const paginatedExpense = expenseCategories.slice(
+    (expensePage - 1) * ITEMS_PER_PAGE,
+    expensePage * ITEMS_PER_PAGE
+  );
+
+  // Kalkulasi Pagination Income
+  const totalIncomePages = Math.ceil(incomeCategories.length / ITEMS_PER_PAGE) || 1;
+  const paginatedIncome = incomeCategories.slice(
+    (incomePage - 1) * ITEMS_PER_PAGE,
+    incomePage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="max-w-6xl mx-auto pb-10 px-4 md:px-8">
@@ -196,49 +216,103 @@ export default function Settings({ setIsSidebarOpen }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
               {/* Expense Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Expense Categories</h3>
-                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                    {expenseCategories.length}
-                  </span>
+              <div className="flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between px-1 mb-4">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Expense Categories</h3>
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      {expenseCategories.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {paginatedExpense.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pengeluaran.</p>
+                    ) : (
+                      paginatedExpense.map((cat) => (
+                        <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-700">{cat.name}</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">Expense</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5">
-                  {expenseCategories.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pengeluaran.</p>
-                  ) : (
-                    expenseCategories.map((cat) => (
-                      <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-700">{cat.name}</span>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">Expense</span>
-                      </div>
-                    ))
-                  )}
-                </div>
+                {/* Controls Pagination Expense */}
+                {totalExpensePages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <span className="text-xs text-slate-400 font-medium">
+                      Page {expensePage} of {totalExpensePages}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setExpensePage((prev) => Math.max(prev - 1, 1))}
+                        disabled={expensePage === 1}
+                        className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        onClick={() => setExpensePage((prev) => Math.min(prev + 1, totalExpensePages))}
+                        disabled={expensePage === totalExpensePages}
+                        className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Income Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Income Categories</h3>
-                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                    {incomeCategories.length}
-                  </span>
+              <div className="flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center justify-between px-1 mb-4">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Income Categories</h3>
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      {incomeCategories.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {paginatedIncome.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pemasukan.</p>
+                    ) : (
+                      paginatedIncome.map((cat) => (
+                        <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-700">{cat.name}</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Income</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5">
-                  {incomeCategories.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic p-4 bg-slate-50/50 rounded-2xl border border-slate-100">Belum ada kategori pemasukan.</p>
-                  ) : (
-                    incomeCategories.map((cat) => (
-                      <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-700">{cat.name}</span>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Income</span>
-                      </div>
-                    ))
-                  )}
-                </div>
+                {/* Controls Pagination Income */}
+                {totalIncomePages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <span className="text-xs text-slate-400 font-medium">
+                      Page {incomePage} of {totalIncomePages}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setIncomePage((prev) => Math.max(prev - 1, 1))}
+                        disabled={incomePage === 1}
+                        className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        onClick={() => setIncomePage((prev) => Math.min(prev + 1, totalIncomePages))}
+                        disabled={incomePage === totalIncomePages}
+                        className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </div>
