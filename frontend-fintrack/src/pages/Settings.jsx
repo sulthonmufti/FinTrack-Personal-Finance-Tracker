@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { 
   User, Lock, Tag, Plus, Loader2, CheckCircle2, XCircle, 
-  ChevronLeft, ChevronRight, Trash2, AlertTriangle 
+  ChevronLeft, ChevronRight, Trash2, Edit2, AlertTriangle 
 } from 'lucide-react';
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 
@@ -14,6 +14,10 @@ export default function Settings({ setIsSidebarOpen }) {
   // State untuk Konfirmasi Hapus Kategori
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: '' });
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // State untuk Edit Kategori
+  const [editModal, setEditModal] = useState({ open: false, id: null, name: '', type: 'expense' });
+  const [isEditing, setIsEditing] = useState(false);
 
   const [profile, setProfile] = useState({ username: '', email: '' });
   const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
@@ -95,6 +99,26 @@ export default function Settings({ setIsSidebarOpen }) {
       triggerModal('error', 'Failed', 'Could not add category.');
     } finally { 
       setIsLoading(false); 
+    }
+  };
+
+  // Handler Edit Kategori
+  const handleEditCategory = async (e) => {
+    e.preventDefault();
+    if (!editModal.name) return;
+    setIsEditing(true);
+    try {
+      await api.put(`/transactions/categories/${editModal.id}`, {
+        name: editModal.name,
+        type: editModal.type
+      });
+      setEditModal({ open: false, id: null, name: '', type: 'expense' });
+      fetchCategories();
+      triggerModal('success', 'Berhasil', 'Kategori berhasil diperbarui.');
+    } catch (err) {
+      triggerModal('error', 'Gagal', err.response?.data?.message || 'Gagal memperbarui kategori.');
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -257,8 +281,15 @@ export default function Settings({ setIsSidebarOpen }) {
                       paginatedExpense.map((cat) => (
                         <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-slate-200 transition-all">
                           <span className="text-sm font-bold text-slate-700">{cat.name}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">Expense</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 mr-1">Expense</span>
+                            <button
+                              onClick={() => setEditModal({ open: true, id: cat.id, name: cat.name, type: cat.type })}
+                              className="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                              title="Edit Kategori"
+                            >
+                              <Edit2 size={16} />
+                            </button>
                             <button
                               onClick={() => setDeleteModal({ open: true, id: cat.id, name: cat.name })}
                               className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
@@ -316,8 +347,15 @@ export default function Settings({ setIsSidebarOpen }) {
                       paginatedIncome.map((cat) => (
                         <div key={cat.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-slate-200 transition-all">
                           <span className="text-sm font-bold text-slate-700">{cat.name}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Income</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mr-1">Income</span>
+                            <button
+                              onClick={() => setEditModal({ open: true, id: cat.id, name: cat.name, type: cat.type })}
+                              className="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                              title="Edit Kategori"
+                            >
+                              <Edit2 size={16} />
+                            </button>
                             <button
                               onClick={() => setDeleteModal({ open: true, id: cat.id, name: cat.name })}
                               className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
@@ -362,6 +400,61 @@ export default function Settings({ setIsSidebarOpen }) {
           </div>
         )}
       </div>
+
+      {/* Modal Edit Kategori */}
+      {editModal.open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" 
+            onClick={() => setEditModal({ open: false, id: null, name: '', type: 'expense' })}
+          ></div>
+          <div className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 text-center">Edit Kategori</h3>
+            <form onSubmit={handleEditCategory} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Nama Kategori</label>
+                <input 
+                  type="text" 
+                  className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  value={editModal.name}
+                  onChange={(e) => setEditModal({ ...editModal, name: e.target.value })}
+                  placeholder="Nama Kategori"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Tipe</label>
+                <select 
+                  className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                  value={editModal.type}
+                  onChange={(e) => setEditModal({ ...editModal, type: e.target.value })}
+                >
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setEditModal({ open: false, id: null, name: '', type: 'expense' })} 
+                  className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isEditing}
+                  className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                >
+                  {isEditing ? <Loader2 className="animate-spin" size={18} /> : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Konfirmasi Hapus */}
       {deleteModal.open && (

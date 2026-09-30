@@ -94,6 +94,35 @@ router.delete("/categories/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// 5c. EDIT KATEGORI
+router.put("/categories/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type } = req.body;
+    const userId = req.user.id;
+
+    if (!name) {
+      return res
+        .status(400)
+        .json({ message: "Nama kategori tidak boleh kosong." });
+    }
+
+    const updatedCategory = await pool.query(
+      "UPDATE categories SET name = $1, type = $2 WHERE id = $3 AND user_id = $4 RETURNING *",
+      [name, type, id, userId],
+    );
+
+    if (updatedCategory.rows.length === 0) {
+      return res.status(404).json({ message: "Kategori tidak ditemukan." });
+    }
+
+    res.json(updatedCategory.rows[0]);
+  } catch (err) {
+    console.error("Edit Category Error:", err.message);
+    res.status(500).send("Gagal memperbarui kategori");
+  }
+});
+
 // 3. TAMBAH TRANSAKSI (Dengan Validasi Kecukupan Saldo)
 router.post("/", authenticateToken, async (req, res) => {
   const client = await pool.connect();
