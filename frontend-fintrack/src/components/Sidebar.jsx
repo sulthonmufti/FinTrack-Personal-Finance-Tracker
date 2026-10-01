@@ -6,7 +6,9 @@ const NavItem = ({ icon: Icon, label, to }) => (
     to={to}
     className={({ isActive }) => `
       flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-      ${isActive ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-500 hover:bg-slate-100'}
+      ${isActive 
+        ? 'bg-slate-100 dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400 font-semibold' 
+        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}
     `}
   >
     <Icon size={20} />
@@ -33,15 +35,18 @@ export default function Sidebar({ isOpen, onClose }) {
       )}
 
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-[70] w-64 bg-white border-r border-slate-200 p-6 flex flex-col transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-[70] w-64 
+        bg-white dark:bg-slate-900 
+        border-r border-slate-200 dark:border-slate-700/50 
+        p-6 flex flex-col transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex items-center justify-between lg:justify-start gap-2 px-2 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">F</div>
-            <span className="text-xl font-bold tracking-tight">FinTrack</span>
+            <span className="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">FinTrack</span>
           </div>
-          <button onClick={onClose} className="lg:hidden p-2 text-slate-400">
+          <button onClick={onClose} className="lg:hidden p-2 text-slate-400 dark:text-slate-500">
             <X size={20} />
           </button>
         </div>
@@ -55,10 +60,10 @@ export default function Sidebar({ isOpen, onClose }) {
           <NavItem icon={Settings} label="Settings" to="/settings" />
         </nav>
 
-        <div className="mt-auto pt-4 border-t border-slate-100">
+        <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700/50">
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all group"
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group"
           >
             <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
             <span className="font-medium text-sm">Logout</span>
@@ -67,4 +72,4 @@ export default function Sidebar({ isOpen, onClose }) {
       </aside>
     </>
   );
-}
+}

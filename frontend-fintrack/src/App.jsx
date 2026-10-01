@@ -26,7 +26,7 @@ function App() {
 
   return (
     <Router>
-      <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
+      <div className="flex min-h-dvh bg-slate-50 dark:bg-slate-900 overflow-x-hidden transition-colors duration-300">
         {isAuthenticated && (
           <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         )}
